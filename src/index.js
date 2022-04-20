@@ -17,7 +17,7 @@
 */
 import React from "react";
 import ReactDOM from "react-dom";
-import { BrowserRouter, Route, Switch } from "react-router-dom";
+import { BrowserRouter, Route, Switch, Redirect } from "react-router-dom";
 
 // core components
 import Admin from "layouts/Admin.js";
@@ -33,7 +33,8 @@ ReactDOM.render(
     <Switch>
       <Route path="/admin" component={Admin} />
       <Route path="/rtl" component={RTL} />
-      <Route path="/" component={Home} />
+      <Route path="/material-dashboard-react" component={Home} />
+      <Redirect to="/material-dashboard-react" from="/" />
     </Switch>
   </BrowserRouter>,
   document.getElementById("root")
