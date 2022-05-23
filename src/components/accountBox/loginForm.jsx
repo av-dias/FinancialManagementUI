@@ -18,14 +18,37 @@ export function LoginForm() {
   const loginHandle = (e) => {
     e.preventDefault();
 
+    var authInfo = {
+      username: document.getElementById("email").value,
+      password: document.getElementById("password").value,
+    };
+
+    var formBody = [];
+    for (let info in authInfo) {
+      var encodedKey = encodeURIComponent(info);
+      var encodedValue = encodeURIComponent(authInfo[info]);
+      formBody.push(encodedKey + "=" + encodedValue);
+    }
+    formBody = formBody.join("&");
+
     async function fetchData() {
-      console.log("FETCH LOGIN---NOT IMPLEMENTED YET");
-      /* const response = await fetch(`http://localhost:8080/api/v1/user`);
-      if (response) {
+      const response = await fetch("http://localhost:8080/api/v1/login", {
+        headers: {
+          Accept: "application/x-www-form-urlencoded;charset=UTF-8",
+          "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
+        },
+        method: "POST",
+        body: formBody,
+      });
+      if (response.status == 200) {
+        //const data = await response.json();
+        //console.log(response);
+        history.push("/admin"); //doing redirect here.
+      } else {
         const data = await response.json();
         console.log(data);
-      } */
-      history.push("/admin"); //doing redirect here.
+        window.alert(JSON.stringify(data));
+      }
     }
     fetchData();
   };
@@ -33,8 +56,8 @@ export function LoginForm() {
   return (
     <BoxContainer>
       <FormContainer id="loginForm" onSubmit={loginHandle}>
-        <Input type="email" placeholder="Email" />
-        <Input type="password" placeholder="Password" />
+        <Input id="email" type="email" placeholder="Email" />
+        <Input id="password" type="password" placeholder="Password" />
       </FormContainer>
       <Marginer direction="vertical" margin={10} />
       <MutedLink href="#" onClick={switchToForgotPassword}>
