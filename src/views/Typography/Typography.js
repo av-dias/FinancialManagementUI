@@ -48,19 +48,21 @@ const purchaseHandle = async (e) => {
   let _value = document.getElementById("product_service_price").value;
   let _subtype = document.getElementById("product_service_subtype").value;
 
-  console.log("FETCH LOGIN---NOT IMPLEMENTED YET");
+  let user_id = window.sessionStorage.getItem("user_id");
 
+  let Purchase = { value: _value, type: _name, subType: _subtype };
   try {
-    const response = await fetch(`http://localhost:8080/api/v1/user/1`, {
+    await fetch(`http://localhost:8080/api/v1/purchase/user/${user_id}`, {
       method: "POST",
       headers: {
         "Access-Control-Allow-Origin": "*",
         Accept: "application/json",
         "Content-Type": "application/json",
+        Authorization:
+          "Bearer " + window.sessionStorage.getItem("access_token"),
       },
-      body: { Purchase: { value: _value, type: _name, subType: _subtype } },
+      body: JSON.stringify(Purchase),
     });
-    console.log(JSON.stringify(response));
   } catch (err) {
     console.log(err);
   }

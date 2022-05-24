@@ -10,6 +10,8 @@ import {
 import { Marginer } from "../marginer";
 import { AccountContext } from "./accountContext";
 import { useHistory } from "react-router-dom";
+import jwt_decode from "jwt-decode";
+import { AlternateEmailTwoTone } from "@material-ui/icons";
 
 export function LoginForm() {
   const { switchToSignup, switchToForgotPassword } = useContext(AccountContext);
@@ -41,8 +43,14 @@ export function LoginForm() {
         body: formBody,
       });
       if (response.status == 200) {
-        //const data = await response.json();
-        //console.log(response);
+        const data = await response.json();
+        window.sessionStorage.setItem("access_token", data.access_token);
+        window.sessionStorage.setItem("refresh_token", data.refresh_token);
+        window.sessionStorage.setItem(
+          "user_id",
+          jwt_decode(data.access_token).user_id
+        );
+
         history.push("/admin"); //doing redirect here.
       } else {
         const data = await response.json();
