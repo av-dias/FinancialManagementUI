@@ -1,7 +1,6 @@
 import React from "react";
 // @material-ui/core components
 import { makeStyles } from "@material-ui/core/styles";
-import InputLabel from "@material-ui/core/InputLabel";
 // core components
 import GridItem from "components/Grid/GridItem.js";
 import GridContainer from "components/Grid/GridContainer.js";
@@ -13,12 +12,22 @@ import CardAvatar from "components/Card/CardAvatar.js";
 import CardBody from "components/Card/CardBody.js";
 import CardFooter from "components/Card/CardFooter.js";
 
+import Paper from "@mui/material/Paper";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
+import TableContainer from "@mui/material/TableContainer";
+import TableHead from "@mui/material/TableHead";
+import TablePagination from "@mui/material/TablePagination";
+import TableRow from "@mui/material/TableRow";
+
 import {
   FormContainer,
   SubmitButton,
 } from "../../components/accountBox/common";
 
 import avatar from "assets/img/faces/marc.jpg";
+//import { create } from "@mui/material/styles/createTransitions";
 
 const styles = {
   cardCategoryWhite: {
@@ -68,8 +77,87 @@ const purchaseHandle = async (e) => {
   }
 };
 
+const columns = [
+  {
+    id: "type",
+    label: "type",
+  },
+  {
+    id: "subType",
+    label: "subType",
+  },
+  { id: "value", label: "value" },
+  { id: "dop", label: "dop" },
+];
+
+let rows = [];
+function createData(info) {
+  return rows.push(info);
+}
+
+function loadTable() {
+  document.getElementById("tablebody").innerHTML = rows.map((row) => {
+    return (
+      <TableRow hover role="checkbox" tabIndex={-1} key={row.code}>
+        {columns.map((column) => {
+          const value = row[column.id];
+          return (
+            <TableCell key={column.id} align={column.align}>
+              {value}
+            </TableCell>
+          );
+        })}
+      </TableRow>
+    );
+  });
+}
+
+async function rowsData() {
+  try {
+    let user_id = window.sessionStorage.getItem("user_id");
+
+    let response = await fetch(
+      `http://localhost:8080/api/v1/purchase/user/${user_id}`,
+      {
+        method: "GET",
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          Authorization:
+            "Bearer " + window.sessionStorage.getItem("access_token"),
+        },
+      }
+    );
+
+    const data = await response.json();
+
+    for (const element of data) {
+      createData(element);
+    }
+    loadTable();
+  } catch (e) {
+    console.log(e.message);
+  }
+}
+
+rowsData();
+
 export default function UserProfile() {
   const classes = useStyles();
+
+  const [page, setPage] = React.useState(0);
+  const [rowsPerPage, setRowsPerPage] = React.useState(10);
+
+  const handleChangePage = (event, newPage) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (event) => {
+    setRowsPerPage(+event.target.value);
+    setPage(0);
+  };
+
   return (
     <div>
       <GridContainer>
@@ -119,95 +207,39 @@ export default function UserProfile() {
         <GridItem xs={12} sm={12} md={8}>
           <Card>
             <CardHeader color="primary">
-              <h4 className={classes.cardTitleWhite}>Edit Profile</h4>
-              <p className={classes.cardCategoryWhite}>Complete your profile</p>
+              <h4 className={classes.cardTitleWhite}>List of Purchases</h4>
             </CardHeader>
             <CardBody>
-              <GridContainer>
-                <GridItem xs={12} sm={12} md={5}>
-                  <CustomInput
-                    labelText="Company (disabled)"
-                    id="company-disabled"
-                    formControlProps={{
-                      fullWidth: true,
-                    }}
-                    inputProps={{
-                      disabled: true,
-                    }}
-                  />
-                </GridItem>
-                <GridItem xs={12} sm={12} md={3}>
-                  <CustomInput
-                    labelText="Username"
-                    id="username"
-                    formControlProps={{
-                      fullWidth: true,
-                    }}
-                  />
-                </GridItem>
-                <GridItem xs={12} sm={12} md={4}>
-                  <CustomInput
-                    labelText="Email address"
-                    id="email-address"
-                    formControlProps={{
-                      fullWidth: true,
-                    }}
-                  />
-                </GridItem>
-              </GridContainer>
-              <GridContainer>
-                <GridItem xs={12} sm={12} md={6}>
-                  <CustomInput
-                    labelText="First Name"
-                    id="first-name"
-                    formControlProps={{
-                      fullWidth: true,
-                    }}
-                  />
-                </GridItem>
-                <GridItem xs={12} sm={12} md={6}>
-                  <CustomInput
-                    labelText="Last Name"
-                    id="last-name"
-                    formControlProps={{
-                      fullWidth: true,
-                    }}
-                  />
-                </GridItem>
-              </GridContainer>
-              <GridContainer>
-                <GridItem xs={12} sm={12} md={4}>
-                  <CustomInput
-                    labelText="City"
-                    id="city"
-                    formControlProps={{
-                      fullWidth: true,
-                    }}
-                  />
-                </GridItem>
-                <GridItem xs={12} sm={12} md={4}>
-                  <CustomInput
-                    labelText="Country"
-                    id="country"
-                    formControlProps={{
-                      fullWidth: true,
-                    }}
-                  />
-                </GridItem>
-                <GridItem xs={12} sm={12} md={4}>
-                  <CustomInput
-                    labelText="Postal Code"
-                    id="postal-code"
-                    formControlProps={{
-                      fullWidth: true,
-                    }}
-                  />
-                </GridItem>
-              </GridContainer>
+              <Paper sx={{ width: "100%" }}>
+                <TableContainer sx={{ maxHeight: 440 }}>
+                  <Table stickyHeader aria-label="sticky table">
+                    <TableHead>
+                      <TableRow>
+                        {columns.map((column) => (
+                          <TableCell
+                            key={column.id}
+                            align={column.align}
+                            style={{ minWidth: column.minWidth }}
+                          >
+                            {column.label}
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    </TableHead>
+                    <TableBody id="tablebody"></TableBody>
+                  </Table>
+                </TableContainer>
+                <TablePagination
+                  rowsPerPageOptions={[10, 25, 100]}
+                  component="div"
+                  count={rows.length}
+                  rowsPerPage={rowsPerPage}
+                  page={page}
+                  onPageChange={handleChangePage}
+                  onRowsPerPageChange={handleChangeRowsPerPage}
+                />
+              </Paper>
             </CardBody>
-            <CardFooter>
-              <Button color="primary">Update Profile</Button>
-            </CardFooter>
           </Card>
         </GridItem>
       </GridContainer>
