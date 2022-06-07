@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 // react plugin for creating charts
 import ChartistGraph from "react-chartist";
 // @material-ui/core
@@ -42,82 +42,107 @@ import styles from "assets/jss/material-dashboard-react/views/dashboardStyle.js"
 const useStyles = makeStyles(styles);
 
 export default function Dashboard() {
+  const [dashboardData, setdashboardData] = React.useState([]);
+
+  async function loadData() {
+    try {
+      let user_id = window.sessionStorage.getItem("user_id");
+
+      let response = await fetch(
+        `http://localhost:8080/api/v1/user/${user_id}/purchase/statistics`,
+        {
+          method: "GET",
+          headers: {
+            "Access-Control-Allow-Origin": "*",
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization:
+              "Bearer " + window.sessionStorage.getItem("access_token"),
+          },
+        }
+      );
+
+      const data = await response.json();
+      return data;
+    } catch (e) {
+      console.log(e.message);
+    }
+  }
+
+  useEffect(() => {
+    loadData().then((data) => setdashboardData(data));
+  }, []);
+
   const classes = useStyles();
   return (
     <div>
       <GridContainer>
         <GridItem xs={12} sm={10} md={3}>
           <Card>
-            <CardHeader color="warning" stats icon>
+            <CardHeader
+              color="warning"
+              stats
+              icon
+              className={classes.cardHeader}
+            >
               <CardIcon color="warning">
                 <Icon>content_copy</Icon>
               </CardIcon>
-              <p className={classes.cardCategory}>Average Spendings</p>
+              <p className={classes.cardCategory}>Total Spendings</p>
               <h3 className={classes.cardTitle}>
-                49/50 <small>GB</small>
+                {dashboardData.total_spendings} <small>€</small>
               </h3>
             </CardHeader>
-            <CardFooter stats>
-              <div className={classes.stats}>
-                <Danger>
-                  <Warning />
-                </Danger>
-                <a href="#pablo" onClick={(e) => e.preventDefault()}>
-                  Get more space
-                </a>
-              </div>
-            </CardFooter>
           </Card>
         </GridItem>
         <GridItem xs={12} sm={6} md={3}>
           <Card>
-            <CardHeader color="success" stats icon>
+            <CardHeader
+              color="success"
+              stats
+              icon
+              className={classes.cardHeader}
+            >
               <CardIcon color="success">
                 <Store />
               </CardIcon>
-              <p className={classes.cardCategory}>Savings</p>
-              <h3 className={classes.cardTitle}>$34,245</h3>
+              <p className={classes.cardCategory}>Total Savings</p>
+              <br></br>
+              <h3 className={classes.cardTitle}>
+                {dashboardData.total_savings} <small>€</small>
+              </h3>
             </CardHeader>
-            <CardFooter stats>
-              <div className={classes.stats}>
-                <DateRange />
-                Last 24 Hours
-              </div>
-            </CardFooter>
           </Card>
         </GridItem>
         <GridItem xs={12} sm={6} md={3}>
           <Card>
-            <CardHeader color="danger" stats icon>
+            <CardHeader
+              color="danger"
+              stats
+              icon
+              className={classes.cardHeader}
+            >
               <CardIcon color="danger">
                 <Icon>info_outline</Icon>
               </CardIcon>
-              <p className={classes.cardCategory}>Month Spenses</p>
-              <h3 className={classes.cardTitle}>75</h3>
+              <p className={classes.cardCategory}>Month Expenses</p>
+              <h3 className={classes.cardTitle}>
+                {dashboardData.month_spendings} <small>€</small>
+              </h3>
             </CardHeader>
-            <CardFooter stats>
-              <div className={classes.stats}>
-                <LocalOffer />
-                Tracked from Github
-              </div>
-            </CardFooter>
           </Card>
         </GridItem>
         <GridItem xs={12} sm={6} md={3}>
           <Card>
-            <CardHeader color="info" stats icon>
+            <CardHeader color="info" stats icon className={classes.cardHeader}>
               <CardIcon color="info">
                 <Accessibility />
               </CardIcon>
-              <p className={classes.cardCategory}>Regular Spends</p>
-              <h3 className={classes.cardTitle}>+245</h3>
+              <p className={classes.cardCategory}>Month Savings</p>
+              <h3 className={classes.cardTitle}>
+                {dashboardData.month_savings} <small>€</small>
+              </h3>
             </CardHeader>
-            <CardFooter stats>
-              <div className={classes.stats}>
-                <Update />
-                Just Updated
-              </div>
-            </CardFooter>
           </Card>
         </GridItem>
       </GridContainer>
@@ -134,7 +159,7 @@ export default function Dashboard() {
               />
             </CardHeader>
             <CardBody>
-              <h4 className={classes.cardTitle}>Daily Sales</h4>
+              <h4 className={classes.cardTitle}>Month Savings</h4>
               <p className={classes.cardCategory}>
                 <span className={classes.successText}>
                   <ArrowUpward className={classes.upArrowCardCategory} /> 55%

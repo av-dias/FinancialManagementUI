@@ -20,13 +20,17 @@ import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TablePagination from "@mui/material/TablePagination";
 import TableRow from "@mui/material/TableRow";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import TextField from "@mui/material/TextField";
+import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 
 import {
   FormContainer,
   SubmitButton,
 } from "../../components/accountBox/common";
 
-import avatar from "assets/img/faces/marc.jpg";
+//import avatar from "assets/img/faces/marc.jpg";
 //import { create } from "@mui/material/styles/createTransitions";
 
 const styles = {
@@ -104,9 +108,17 @@ export default function UserProfile() {
   const [page, setPage] = React.useState(0);
   const [rowsPerPage, setRowsPerPage] = React.useState(10);
   const [rows, setRows] = React.useState([]);
+  const [purchaseDate, setPurchaseDate] = React.useState(new Date());
 
   useEffect(() => {
-    rowsData().then((data) => setRows(data));
+    rowsData().then((data) => {
+      data.sort(function (a, b) {
+        var dateA = new Date(a.dop),
+          dateB = new Date(b.dop);
+        return dateB - dateA;
+      });
+      setRows(data);
+    });
   }, []);
 
   const purchaseHandle = async (e) => {
@@ -115,10 +127,15 @@ export default function UserProfile() {
     let _name = document.getElementById("product_service_name").value;
     let _value = document.getElementById("product_service_price").value;
     let _subtype = document.getElementById("product_service_subtype").value;
+    let date = new Date(purchaseDate);
+    let _dop = new Date(date.setTime(date.getTime() + 1 * 60 * 60 * 1000));
+    //let _dop = purchaseDate;
+
+    console.log(_dop);
 
     let user_id = window.sessionStorage.getItem("user_id");
 
-    let Purchase = { value: _value, type: _name, subType: _subtype };
+    let Purchase = { value: _value, type: _name, subType: _subtype, dop: _dop };
     try {
       await fetch(`http://localhost:8080/api/v1/purchase/user/${user_id}`, {
         method: "POST",
@@ -151,14 +168,9 @@ export default function UserProfile() {
       <GridContainer>
         <GridItem xs={12} sm={12} md={4}>
           <Card profile>
-            <CardAvatar profile>
-              <a href="#pablo" onClick={(e) => e.preventDefault()}>
-                <img src={avatar} alt="..." />
-              </a>
-            </CardAvatar>
             <CardBody profile>
               <FormContainer id="purchaseForm" onSubmit={purchaseHandle}>
-                <h6 className={classes.cardCategory}>CEO / CO-FOUNDER</h6>
+                <a>Purchases</a>
                 <CustomInput
                   labelText="Product/Service Name"
                   id="product_service_name"
@@ -180,6 +192,21 @@ export default function UserProfile() {
                     fullWidth: true,
                   }}
                 />
+                <LocalizationProvider dateAdapter={AdapterDateFns}>
+                  <DatePicker
+                    id="product_service_dop"
+                    disableFuture
+                    label="Date of Purchase"
+                    openTo="year"
+                    views={["year", "month", "day"]}
+                    value={purchaseDate}
+                    onChange={(newValue) => {
+                      setPurchaseDate(newValue);
+                    }}
+                    renderInput={(params) => <TextField {...params} />}
+                  />
+                </LocalizationProvider>
+
                 <SubmitButton
                   color="primary"
                   type="submit"
@@ -199,7 +226,7 @@ export default function UserProfile() {
             </CardHeader>
             <CardBody>
               <Paper sx={{ width: "100%" }}>
-                <TableContainer sx={{ maxHeight: 440 }}>
+                <TableContainer sx={{ minHeight: 300 }}>
                   <Table stickyHeader aria-label="sticky table">
                     <TableHead>
                       <TableRow>
@@ -241,6 +268,37 @@ export default function UserProfile() {
                   onRowsPerPageChange={handleChangeRowsPerPage}
                 />
               </Paper>
+            </CardBody>
+          </Card>
+        </GridItem>
+        <GridItem xs={12} sm={12} md={4}>
+          <Card profile>
+            <CardBody profile>
+              <FormContainer id="incomeForm" onSubmit={purchaseHandle}>
+                <a>Income</a>
+                <CustomInput
+                  labelText="Type"
+                  id="income_type"
+                  formControlProps={{
+                    fullWidth: true,
+                  }}
+                />
+                <CustomInput
+                  labelText="Value"
+                  id="income_value"
+                  formControlProps={{
+                    fullWidth: true,
+                  }}
+                />
+                <SubmitButton
+                  color="primary"
+                  type="submit"
+                  form="purchaseForm"
+                  round
+                >
+                  Insert
+                </SubmitButton>
+              </FormContainer>
             </CardBody>
           </Card>
         </GridItem>

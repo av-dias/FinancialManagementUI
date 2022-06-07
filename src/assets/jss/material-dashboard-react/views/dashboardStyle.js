@@ -13,6 +13,9 @@ const dashboardStyle = {
     width: "16px",
     height: "16px",
   },
+  cardHeader: {
+    height: "100px",
+  },
   stats: {
     color: grayColor[0],
     display: "inline-flex",
