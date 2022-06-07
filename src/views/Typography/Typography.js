@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 // @material-ui/core components
 import { makeStyles } from "@material-ui/core/styles";
 // core components
@@ -50,33 +50,6 @@ const styles = {
 
 const useStyles = makeStyles(styles);
 
-const purchaseHandle = async (e) => {
-  e.preventDefault();
-
-  let _name = document.getElementById("product_service_name").value;
-  let _value = document.getElementById("product_service_price").value;
-  let _subtype = document.getElementById("product_service_subtype").value;
-
-  let user_id = window.sessionStorage.getItem("user_id");
-
-  let Purchase = { value: _value, type: _name, subType: _subtype };
-  try {
-    await fetch(`http://localhost:8080/api/v1/purchase/user/${user_id}`, {
-      method: "POST",
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        Accept: "application/json",
-        "Content-Type": "application/json",
-        Authorization:
-          "Bearer " + window.sessionStorage.getItem("access_token"),
-      },
-      body: JSON.stringify(Purchase),
-    });
-  } catch (err) {
-    console.log(err);
-  }
-};
-
 const columns = [
   {
     id: "type",
@@ -90,29 +63,13 @@ const columns = [
   { id: "dop", label: "dop" },
 ];
 
-let rows = [];
+let rows_aux = [];
 function createData(info) {
-  return rows.push(info);
-}
-
-function loadTable() {
-  document.getElementById("tablebody").innerHTML = rows.map((row) => {
-    return (
-      <TableRow hover role="checkbox" tabIndex={-1} key={row.code}>
-        {columns.map((column) => {
-          const value = row[column.id];
-          return (
-            <TableCell key={column.id} align={column.align}>
-              {value}
-            </TableCell>
-          );
-        })}
-      </TableRow>
-    );
-  });
+  return rows_aux.push(info);
 }
 
 async function rowsData() {
+  rows_aux = [];
   try {
     let user_id = window.sessionStorage.getItem("user_id");
 
@@ -135,19 +92,50 @@ async function rowsData() {
     for (const element of data) {
       createData(element);
     }
-    loadTable();
+    return rows_aux;
   } catch (e) {
     console.log(e.message);
   }
 }
-
-rowsData();
 
 export default function UserProfile() {
   const classes = useStyles();
 
   const [page, setPage] = React.useState(0);
   const [rowsPerPage, setRowsPerPage] = React.useState(10);
+  const [rows, setRows] = React.useState([]);
+
+  useEffect(() => {
+    rowsData().then((data) => setRows(data));
+  }, []);
+
+  const purchaseHandle = async (e) => {
+    e.preventDefault();
+
+    let _name = document.getElementById("product_service_name").value;
+    let _value = document.getElementById("product_service_price").value;
+    let _subtype = document.getElementById("product_service_subtype").value;
+
+    let user_id = window.sessionStorage.getItem("user_id");
+
+    let Purchase = { value: _value, type: _name, subType: _subtype };
+    try {
+      await fetch(`http://localhost:8080/api/v1/purchase/user/${user_id}`, {
+        method: "POST",
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          Authorization:
+            "Bearer " + window.sessionStorage.getItem("access_token"),
+        },
+        body: JSON.stringify(Purchase),
+      });
+      rowsData().then((data) => setRows(data));
+    } catch (err) {
+      console.log(err);
+    }
+  };
 
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
@@ -226,7 +214,21 @@ export default function UserProfile() {
                         ))}
                       </TableRow>
                     </TableHead>
-                    <TableBody id="tablebody"></TableBody>
+                    <TableBody id="tablebody">
+                      {
+                        //console.log(rows)
+                        rows.map((item) => {
+                          return (
+                            <tr key={Math.random()}>
+                              <th scope="row">{item.type}</th>
+                              <td>{item.subType}</td>
+                              <td>{item.value}</td>
+                              <td>{item.dop}</td>
+                            </tr>
+                          );
+                        })
+                      }
+                    </TableBody>
                   </Table>
                 </TableContainer>
                 <TablePagination
