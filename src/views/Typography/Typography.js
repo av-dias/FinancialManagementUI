@@ -64,7 +64,7 @@ const columns = [
     label: "subType",
   },
   { id: "value", label: "value" },
-  { id: "dop", label: "dop" },
+  { id: "date", label: "date" },
 ];
 
 let rows_aux = [];
@@ -77,7 +77,7 @@ async function rowsData() {
   try {
     let user_id = window.sessionStorage.getItem("user_id");
 
-    let response = await fetch(
+    let response_purchase = await fetch(
       `http://localhost:8080/api/v1/purchase/user/${user_id}`,
       {
         method: "GET",
@@ -91,7 +91,24 @@ async function rowsData() {
       }
     );
 
-    const data = await response.json();
+    const data_purchase = await response_purchase.json();
+
+    let response_income = await fetch(
+      `http://localhost:8080/api/v1/income/user/${user_id}`,
+      {
+        method: "GET",
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          Authorization:
+            "Bearer " + window.sessionStorage.getItem("access_token"),
+        },
+      }
+    );
+
+    const data_income = await response_income.json();
+    let data = [...data_purchase, ...data_income];
 
     for (const element of data) {
       createData(element);
@@ -109,12 +126,13 @@ export default function UserProfile() {
   const [rowsPerPage, setRowsPerPage] = React.useState(10);
   const [rows, setRows] = React.useState([]);
   const [purchaseDate, setPurchaseDate] = React.useState(new Date());
+  const [incomeDate, setIncomeDate] = React.useState(new Date());
 
   useEffect(() => {
     rowsData().then((data) => {
       data.sort(function (a, b) {
-        var dateA = new Date(a.dop),
-          dateB = new Date(b.dop);
+        var dateA = new Date(a.dop || a.doi),
+          dateB = new Date(b.dop || a.doi);
         return dateB - dateA;
       });
       setRows(data);
@@ -131,8 +149,6 @@ export default function UserProfile() {
     let _dop = new Date(date.setTime(date.getTime() + 1 * 60 * 60 * 1000));
     //let _dop = purchaseDate;
 
-    console.log(_dop);
-
     let user_id = window.sessionStorage.getItem("user_id");
 
     let Purchase = { value: _value, type: _name, subType: _subtype, dop: _dop };
@@ -147,6 +163,39 @@ export default function UserProfile() {
             "Bearer " + window.sessionStorage.getItem("access_token"),
         },
         body: JSON.stringify(Purchase),
+      });
+      rowsData().then((data) => setRows(data));
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  const incomeHandle = async (e) => {
+    e.preventDefault();
+
+    let _type = document.getElementById("income_type").value;
+    let _subtype = document.getElementById("income_subType").value;
+    let _value = document.getElementById("income_value").value;
+    let date = new Date(purchaseDate);
+    let _doi = new Date(date.setTime(date.getTime() + 1 * 60 * 60 * 1000));
+    //let _dop = purchaseDate;
+
+    console.log(_doi);
+
+    let user_id = window.sessionStorage.getItem("user_id");
+
+    let Income = { value: _value, type: _type, subType: _subtype, doi: _doi };
+    try {
+      await fetch(`http://localhost:8080/api/v1/income/user/${user_id}`, {
+        method: "POST",
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          Authorization:
+            "Bearer " + window.sessionStorage.getItem("access_token"),
+        },
+        body: JSON.stringify(Income),
       });
       rowsData().then((data) => setRows(data));
     } catch (err) {
@@ -186,7 +235,7 @@ export default function UserProfile() {
                   }}
                 />
                 <CustomInput
-                  labelText="Product/Service SubType"
+                  labelText="Product/Service Sub-Type"
                   id="product_service_subtype"
                   formControlProps={{
                     fullWidth: true,
@@ -250,7 +299,7 @@ export default function UserProfile() {
                               <th scope="row">{item.type}</th>
                               <td>{item.subType}</td>
                               <td>{item.value}</td>
-                              <td>{item.dop}</td>
+                              <td>{item.dop || item.doi}</td>
                             </tr>
                           );
                         })
@@ -274,13 +323,20 @@ export default function UserProfile() {
         <GridItem xs={12} sm={12} md={4}>
           <Card profile>
             <CardBody profile>
-              <FormContainer id="incomeForm" onSubmit={purchaseHandle}>
+              <FormContainer id="incomeForm" onSubmit={incomeHandle}>
                 <a>Income</a>
                 <CustomInput
                   labelText="Type"
                   id="income_type"
                   formControlProps={{
-                    fullWidth: true,
+                    fullWidth: false,
+                  }}
+                />
+                <CustomInput
+                  labelText="Sub-Type"
+                  id="income_subType"
+                  formControlProps={{
+                    fullWidth: false,
                   }}
                 />
                 <CustomInput
@@ -290,10 +346,24 @@ export default function UserProfile() {
                     fullWidth: true,
                   }}
                 />
+                <LocalizationProvider dateAdapter={AdapterDateFns}>
+                  <DatePicker
+                    id="income_doi"
+                    disableFuture
+                    label="Date of Income"
+                    openTo="year"
+                    views={["year", "month", "day"]}
+                    value={incomeDate}
+                    onChange={(newValue) => {
+                      setIncomeDate(newValue);
+                    }}
+                    renderInput={(params) => <TextField {...params} />}
+                  />
+                </LocalizationProvider>
                 <SubmitButton
                   color="primary"
                   type="submit"
-                  form="purchaseForm"
+                  form="incomeForm"
                   round
                 >
                   Insert
