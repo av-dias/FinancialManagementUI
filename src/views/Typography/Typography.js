@@ -56,15 +56,15 @@ const useStyles = makeStyles(styles);
 
 const columns = [
   {
-    id: "type",
+    id: "Type",
     label: "type",
   },
   {
     id: "subType",
-    label: "subType",
+    label: "Name",
   },
-  { id: "value", label: "value" },
-  { id: "date", label: "date" },
+  { id: "Value", label: "value" },
+  { id: "Date", label: "date" },
 ];
 
 let rows_aux = [];
@@ -144,14 +144,14 @@ export default function UserProfile() {
 
     let _name = document.getElementById("product_service_name").value;
     let _value = document.getElementById("product_service_price").value;
-    let _subtype = document.getElementById("product_service_subtype").value;
+    let _type = document.getElementById("product_service_subtype").value;
     let date = new Date(purchaseDate);
     let _dop = new Date(date.setTime(date.getTime() + 1 * 60 * 60 * 1000));
     //let _dop = purchaseDate;
 
     let user_id = window.sessionStorage.getItem("user_id");
 
-    let Purchase = { value: _value, type: _name, subType: _subtype, dop: _dop };
+    let Purchase = { value: _value, name: _name, type: _type, dop: _dop };
     try {
       await fetch(`http://localhost:8080/api/v1/purchase/user/${user_id}`, {
         method: "POST",
@@ -176,7 +176,7 @@ export default function UserProfile() {
     let _type = document.getElementById("income_type").value;
     let _subtype = document.getElementById("income_subType").value;
     let _value = document.getElementById("income_value").value;
-    let date = new Date(purchaseDate);
+    let date = new Date(incomeDate);
     let _doi = new Date(date.setTime(date.getTime() + 1 * 60 * 60 * 1000));
     //let _dop = purchaseDate;
 
@@ -271,7 +271,7 @@ export default function UserProfile() {
         <GridItem xs={12} sm={12} md={8}>
           <Card>
             <CardHeader color="primary">
-              <h4 className={classes.cardTitleWhite}>List of Purchases</h4>
+              <h4 className={classes.cardTitleWhite}>Movement History</h4>
             </CardHeader>
             <CardBody>
               <Paper sx={{ width: "100%" }}>
@@ -297,7 +297,7 @@ export default function UserProfile() {
                           return (
                             <tr key={Math.random()}>
                               <th scope="row">{item.type}</th>
-                              <td>{item.subType}</td>
+                              <td>{item.subType || item.name}</td>
                               <td>{item.value}</td>
                               <td>{item.dop || item.doi}</td>
                             </tr>

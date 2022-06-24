@@ -63,6 +63,7 @@ export default function Dashboard() {
       );
 
       const data = await response.json();
+      console.log(data);
       return data;
     } catch (e) {
       console.log(e.message);
@@ -139,6 +140,7 @@ export default function Dashboard() {
                 <Accessibility />
               </CardIcon>
               <p className={classes.cardCategory}>Month Savings</p>
+              <br></br>
               <h3 className={classes.cardTitle}>
                 {dashboardData.month_savings} <small>€</small>
               </h3>
@@ -153,7 +155,7 @@ export default function Dashboard() {
               <ChartistGraph
                 className="ct-chart"
                 data={dailySalesChart.data}
-                type="Line"
+                type="Bar"
                 options={dailySalesChart.options}
                 listener={dailySalesChart.animation}
               />
