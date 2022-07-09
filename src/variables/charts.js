@@ -15,56 +15,67 @@ var delays2 = 80,
 // // // Daily Sales
 // #############################
 
-const dailySalesChart = {
-  data: {
-    labels: ["M", "T", "W", "T", "F", "S", "S"],
-    series: [[12, 17, 7, 17, 23, 18, 38]],
-  },
-  options: {
-    lineSmooth: Chartist.Interpolation.cardinal({
-      tension: 0,
-    }),
-    low: 0,
-    high: 50, // creative tim: we recommend you to set the high sa the biggest value + something for a better look
-    chartPadding: {
-      top: 0,
-      right: 0,
-      bottom: 0,
-      left: 0,
-    },
-  },
-  // for animation
-  animation: {
-    draw: function (data) {
-      if (data.type === "line" || data.type === "area") {
-        data.element.animate({
-          d: {
-            begin: 600,
-            dur: 700,
-            from: data.path
-              .clone()
-              .scale(1, 0)
-              .translate(0, data.chartRect.height())
-              .stringify(),
-            to: data.path.clone().stringify(),
-            easing: Chartist.Svg.Easing.easeOutQuint,
-          },
-        });
-      } else if (data.type === "point") {
-        data.element.animate({
-          opacity: {
-            begin: (data.index + 1) * delays,
-            dur: durations,
-            from: 0,
-            to: 1,
-            easing: "ease",
-          },
-        });
-      }
-    },
-  },
-};
+function loadCharts(data) {
+  let typeNames = [],
+    values = [],
+    range = 50;
+  if (data) {
+    typeNames = Object.keys(data);
+    values.push(Object.values(data));
+    range =
+      Math.max.apply(Math, values[0]) + Math.max.apply(Math, values[0]) * 0.1;
+  }
 
+  return {
+    data: {
+      labels: typeNames,
+      series: values,
+    },
+    options: {
+      lineSmooth: Chartist.Interpolation.cardinal({
+        tension: 0,
+      }),
+      low: 0,
+      high: range, // creative tim: we recommend you to set the high sa the biggest value + something for a better look
+      chartPadding: {
+        top: 0,
+        right: 0,
+        bottom: 0,
+        left: 0,
+      },
+    },
+    // for animation
+    animation: {
+      draw: function (data) {
+        if (data.type === "line" || data.type === "area") {
+          data.element.animate({
+            d: {
+              begin: 600,
+              dur: 700,
+              from: data.path
+                .clone()
+                .scale(1, 0)
+                .translate(0, data.chartRect.height())
+                .stringify(),
+              to: data.path.clone().stringify(),
+              easing: Chartist.Svg.Easing.easeOutQuint,
+            },
+          });
+        } else if (data.type === "point") {
+          data.element.animate({
+            opacity: {
+              begin: (data.index + 1) * delays,
+              dur: durations,
+              from: 0,
+              to: 1,
+              easing: "ease",
+            },
+          });
+        }
+      },
+    },
+  };
+}
 // ##############################
 // // // Email Subscriptions
 // #############################
@@ -136,7 +147,7 @@ const emailsSubscriptionChart = {
 
 const completedTasksChart = {
   data: {
-    labels: ["12am", "3pm", "6pm", "9pm", "12pm", "3am", "6am", "9am"],
+    labels: ["Jul", "Aug", "Sep", "Oct", "Nov", "Dec", "Jan", "Feb"],
     series: [[230, 750, 450, 300, 280, 240, 200, 190]],
   },
   options: {
@@ -184,7 +195,7 @@ const completedTasksChart = {
 };
 
 module.exports = {
-  dailySalesChart,
+  loadCharts,
   emailsSubscriptionChart,
   completedTasksChart,
 };

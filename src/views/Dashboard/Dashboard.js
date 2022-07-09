@@ -31,18 +31,21 @@ import CardFooter from "components/Card/CardFooter.js";
 
 import { bugs, website, server } from "variables/general.js";
 
-import {
-  dailySalesChart,
-  emailsSubscriptionChart,
-  completedTasksChart,
-} from "variables/charts.js";
+import { loadCharts, completedTasksChart } from "variables/charts.js";
 
 import styles from "assets/jss/material-dashboard-react/views/dashboardStyle.js";
 
 const useStyles = makeStyles(styles);
 
 export default function Dashboard() {
-  const [dashboardData, setdashboardData] = React.useState([]);
+  let [dashboardData, setdashboardData] = React.useState({
+    total_spendings: 0,
+    total_savings: 0,
+    month_spendings: 0,
+    month_savings: 0,
+  });
+
+  let [chartData, setchartData] = React.useState(loadCharts());
 
   async function loadData() {
     try {
@@ -63,6 +66,7 @@ export default function Dashboard() {
       );
 
       const data = await response.json();
+
       console.log(data);
       return data;
     } catch (e) {
@@ -71,7 +75,10 @@ export default function Dashboard() {
   }
 
   useEffect(() => {
-    loadData().then((data) => setdashboardData(data));
+    loadData().then((data) => {
+      setdashboardData(data);
+      setchartData(loadCharts(data.purchases_by_type));
+    });
   }, []);
 
   const classes = useStyles();
@@ -91,7 +98,7 @@ export default function Dashboard() {
               </CardIcon>
               <p className={classes.cardCategory}>Total Spendings</p>
               <h3 className={classes.cardTitle}>
-                {dashboardData.total_spendings} <small>€</small>
+                {dashboardData.total_spendings.toFixed(2) || 0} <small>€</small>
               </h3>
             </CardHeader>
           </Card>
@@ -110,7 +117,7 @@ export default function Dashboard() {
               <p className={classes.cardCategory}>Total Savings</p>
               <br></br>
               <h3 className={classes.cardTitle}>
-                {dashboardData.total_savings} <small>€</small>
+                {dashboardData.total_savings.toFixed(2) || 0} <small>€</small>
               </h3>
             </CardHeader>
           </Card>
@@ -128,7 +135,7 @@ export default function Dashboard() {
               </CardIcon>
               <p className={classes.cardCategory}>Month Expenses</p>
               <h3 className={classes.cardTitle}>
-                {dashboardData.month_spendings} <small>€</small>
+                {dashboardData.month_spendings.toFixed(2) || 0} <small>€</small>
               </h3>
             </CardHeader>
           </Card>
@@ -142,22 +149,22 @@ export default function Dashboard() {
               <p className={classes.cardCategory}>Month Savings</p>
               <br></br>
               <h3 className={classes.cardTitle}>
-                {dashboardData.month_savings} <small>€</small>
+                {dashboardData.month_savings.toFixed(2) || 0} <small>€</small>
               </h3>
             </CardHeader>
           </Card>
         </GridItem>
       </GridContainer>
       <GridContainer>
-        <GridItem xs={12} sm={12} md={4}>
+        <GridItem xs={12} sm={12} md={8}>
           <Card chart>
             <CardHeader color="success">
               <ChartistGraph
                 className="ct-chart"
-                data={dailySalesChart.data}
+                data={chartData.data}
                 type="Bar"
-                options={dailySalesChart.options}
-                listener={dailySalesChart.animation}
+                options={chartData.options}
+                listener={chartData.animation}
               />
             </CardHeader>
             <CardBody>
@@ -172,29 +179,6 @@ export default function Dashboard() {
             <CardFooter chart>
               <div className={classes.stats}>
                 <AccessTime /> updated 4 minutes ago
-              </div>
-            </CardFooter>
-          </Card>
-        </GridItem>
-        <GridItem xs={12} sm={12} md={4}>
-          <Card chart>
-            <CardHeader color="warning">
-              <ChartistGraph
-                className="ct-chart"
-                data={emailsSubscriptionChart.data}
-                type="Bar"
-                options={emailsSubscriptionChart.options}
-                responsiveOptions={emailsSubscriptionChart.responsiveOptions}
-                listener={emailsSubscriptionChart.animation}
-              />
-            </CardHeader>
-            <CardBody>
-              <h4 className={classes.cardTitle}>Email Subscriptions</h4>
-              <p className={classes.cardCategory}>Last Campaign Performance</p>
-            </CardBody>
-            <CardFooter chart>
-              <div className={classes.stats}>
-                <AccessTime /> campaign sent 2 days ago
               </div>
             </CardFooter>
           </Card>

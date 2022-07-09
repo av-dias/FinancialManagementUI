@@ -65,6 +65,7 @@ const columns = [
   },
   { id: "Value", label: "value" },
   { id: "Date", label: "date" },
+  { id: "Option", label: "option" },
 ];
 
 let rows_aux = [];
@@ -215,6 +216,58 @@ export default function UserProfile() {
   return (
     <div>
       <GridContainer>
+        <GridItem xs={12} sm={12} md={12}>
+          <Card>
+            <CardHeader color="primary">
+              <h4 className={classes.cardTitleWhite}>Movement History</h4>
+            </CardHeader>
+            <CardBody>
+              <Paper sx={{ width: "100%" }}>
+                <TableContainer sx={{ minHeight: 300 }}>
+                  <Table stickyHeader aria-label="sticky table">
+                    <TableHead>
+                      <TableRow>
+                        {columns.map((column) => (
+                          <TableCell
+                            key={column.id}
+                            align={column.align}
+                            style={{ minWidth: column.minWidth }}
+                          >
+                            {column.label}
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    </TableHead>
+                    <TableBody id="tablebody">
+                      {
+                        //console.log(rows)
+                        rows.map((item) => {
+                          return (
+                            <tr key={Math.random()}>
+                              <th scope="row">{item.type}</th>
+                              <td>{item.subType || item.name}</td>
+                              <td>{item.value}</td>
+                              <td>{item.dop || item.doi}</td>
+                            </tr>
+                          );
+                        })
+                      }
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+                <TablePagination
+                  rowsPerPageOptions={[10, 25, 100]}
+                  component="div"
+                  count={rows.length}
+                  rowsPerPage={rowsPerPage}
+                  page={page}
+                  onPageChange={handleChangePage}
+                  onRowsPerPageChange={handleChangeRowsPerPage}
+                />
+              </Paper>
+            </CardBody>
+          </Card>
+        </GridItem>
         <GridItem xs={12} sm={12} md={4}>
           <Card profile>
             <CardBody profile>
@@ -265,58 +318,6 @@ export default function UserProfile() {
                   Insert
                 </SubmitButton>
               </FormContainer>
-            </CardBody>
-          </Card>
-        </GridItem>
-        <GridItem xs={12} sm={12} md={8}>
-          <Card>
-            <CardHeader color="primary">
-              <h4 className={classes.cardTitleWhite}>Movement History</h4>
-            </CardHeader>
-            <CardBody>
-              <Paper sx={{ width: "100%" }}>
-                <TableContainer sx={{ minHeight: 300 }}>
-                  <Table stickyHeader aria-label="sticky table">
-                    <TableHead>
-                      <TableRow>
-                        {columns.map((column) => (
-                          <TableCell
-                            key={column.id}
-                            align={column.align}
-                            style={{ minWidth: column.minWidth }}
-                          >
-                            {column.label}
-                          </TableCell>
-                        ))}
-                      </TableRow>
-                    </TableHead>
-                    <TableBody id="tablebody">
-                      {
-                        //console.log(rows)
-                        rows.map((item) => {
-                          return (
-                            <tr key={Math.random()}>
-                              <th scope="row">{item.type}</th>
-                              <td>{item.subType || item.name}</td>
-                              <td>{item.value}</td>
-                              <td>{item.dop || item.doi}</td>
-                            </tr>
-                          );
-                        })
-                      }
-                    </TableBody>
-                  </Table>
-                </TableContainer>
-                <TablePagination
-                  rowsPerPageOptions={[10, 25, 100]}
-                  component="div"
-                  count={rows.length}
-                  rowsPerPage={rowsPerPage}
-                  page={page}
-                  onPageChange={handleChangePage}
-                  onRowsPerPageChange={handleChangeRowsPerPage}
-                />
-              </Paper>
             </CardBody>
           </Card>
         </GridItem>
