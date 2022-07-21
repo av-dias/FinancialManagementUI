@@ -29,6 +29,7 @@ import {
   FormContainer,
   SubmitButton,
 } from "../../components/accountBox/common";
+import { Alert } from "@mui/material";
 
 //import avatar from "assets/img/faces/marc.jpg";
 //import { create } from "@mui/material/styles/createTransitions";
@@ -57,18 +58,19 @@ const useStyles = makeStyles(styles);
 const columns = [
   {
     id: "Type",
-    label: "type",
+    label: "Type",
   },
   {
     id: "subType",
     label: "Name",
   },
-  { id: "Value", label: "value" },
-  { id: "Date", label: "date" },
-  { id: "Option", label: "option" },
+  { id: "Value", label: "Price" },
+  { id: "Date", label: "Date" },
+  { id: "Options", label: "Options" },
 ];
 
 let rows_aux = [];
+
 function createData(info) {
   return rows_aux.push(info);
 }
@@ -109,9 +111,14 @@ async function rowsData() {
     );
 
     const data_income = await response_income.json();
-    let data = [...data_purchase, ...data_income];
-
-    for (const element of data) {
+    //let data = [...data_purchase, ...data_income];
+    //console.log(data);
+    for (const element of data_purchase) {
+      element.status = 0;
+      createData(element);
+    }
+    for (const element of data_income) {
+      element.status = 1;
       createData(element);
     }
     return rows_aux;
@@ -129,13 +136,19 @@ export default function UserProfile() {
   const [purchaseDate, setPurchaseDate] = React.useState(new Date());
   const [incomeDate, setIncomeDate] = React.useState(new Date());
 
+  function sortArray(data) {
+    data.sort(function (a, b) {
+      var dateA = new Date(a.dop || a.doi),
+        dateB = new Date(b.dop || a.doi);
+      return dateB - dateA;
+    });
+
+    return data;
+  }
+
   useEffect(() => {
     rowsData().then((data) => {
-      data.sort(function (a, b) {
-        var dateA = new Date(a.dop || a.doi),
-          dateB = new Date(b.dop || a.doi);
-        return dateB - dateA;
-      });
+      sortArray(data);
       setRows(data);
     });
   }, []);
@@ -165,7 +178,10 @@ export default function UserProfile() {
         },
         body: JSON.stringify(Purchase),
       });
-      rowsData().then((data) => setRows(data));
+      rowsData().then((data) => {
+        sortArray(data);
+        setRows(data);
+      });
     } catch (err) {
       console.log(err);
     }
@@ -180,8 +196,6 @@ export default function UserProfile() {
     let date = new Date(incomeDate);
     let _doi = new Date(date.setTime(date.getTime() + 1 * 60 * 60 * 1000));
     //let _dop = purchaseDate;
-
-    console.log(_doi);
 
     let user_id = window.sessionStorage.getItem("user_id");
 
@@ -213,6 +227,12 @@ export default function UserProfile() {
     setPage(0);
   };
 
+  const handleClick = (event) => {
+    let id = event.target.getAttribute("id");
+    let status = event.target.getAttribute("value");
+    console.log(status, id);
+  };
+
   return (
     <div>
       <GridContainer>
@@ -239,19 +259,36 @@ export default function UserProfile() {
                       </TableRow>
                     </TableHead>
                     <TableBody id="tablebody">
-                      {
-                        //console.log(rows)
-                        rows.map((item) => {
-                          return (
-                            <tr key={Math.random()}>
-                              <th scope="row">{item.type}</th>
-                              <td>{item.subType || item.name}</td>
-                              <td>{item.value}</td>
-                              <td>{item.dop || item.doi}</td>
-                            </tr>
-                          );
-                        })
-                      }
+                      {rows.map((item) => {
+                        return (
+                          <tr key={Math.random()}>
+                            <th scope="row">{item.type}</th>
+                            <td>{item.subType || item.name}</td>
+                            <td>{item.value}</td>
+                            <td>{item.dop || item.doi}</td>
+                            <td>
+                              <button
+                                id={item.id}
+                                value={item.status}
+                                onClick={handleClick}
+                              >
+                                Edit
+                              </button>
+                              {item.status == 0 ? (
+                                <button
+                                  id={item.id}
+                                  value={item.status}
+                                  onClick={handleClick}
+                                >
+                                  Split
+                                </button>
+                              ) : (
+                                <></>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </TableBody>
                   </Table>
                 </TableContainer>
