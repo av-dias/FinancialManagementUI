@@ -44,13 +44,17 @@ export function LoginForm() {
       });
       if (response.status == 200) {
         const data = await response.json();
+        console.log(jwt_decode(data.access_token));
         window.sessionStorage.setItem("access_token", data.access_token);
         window.sessionStorage.setItem("refresh_token", data.refresh_token);
         window.sessionStorage.setItem(
           "user_id",
           jwt_decode(data.access_token).user_id
         );
-
+        window.sessionStorage.setItem(
+          "user_name",
+          jwt_decode(data.access_token).sub
+        );
         history.push("/admin"); //doing redirect here.
       } else {
         const data = await response.json();

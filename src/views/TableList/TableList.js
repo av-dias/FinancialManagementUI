@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 // @material-ui/core components
 import { makeStyles } from "@material-ui/core/styles";
 // core components
@@ -41,67 +41,81 @@ const styles = {
 
 const useStyles = makeStyles(styles);
 
+//let rows_aux = [{ ola: 1 }];
+
+/* function createData(info) {
+  return rows_aux.push(info);
+} */
+
 export default function TableList() {
   const classes = useStyles();
+  const [rows, setRows] = React.useState([]);
+
+  async function loadData() {
+    try {
+      let user_id = window.sessionStorage.getItem("user_id");
+      let user_name = window.sessionStorage.getItem("user_name");
+
+      let response = await fetch(
+        `http://localhost:8080/api/v1/split/users/user/${user_id}/stats`,
+        {
+          method: "GET",
+          headers: {
+            "Access-Control-Allow-Origin": "*",
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization:
+              "Bearer " + window.sessionStorage.getItem("access_token"),
+          },
+        }
+      );
+
+      const data = await response.json();
+      let json;
+      data.stats.forEach((item) => {
+        //let id = item.substring(0, item.indexOf("="));
+        json = JSON.parse(item.substring(item.indexOf("=") + 1));
+        json.id = user_id;
+        json.name = user_name;
+      });
+
+      //createData(json);
+
+      return json;
+    } catch (e) {
+      console.log(e.message);
+    }
+  }
+
+  useEffect(() => {
+    loadData().then((data) => {
+      //console.log(data);
+      setRows(data);
+    });
+  }, []);
+
   return (
     <GridContainer>
       <GridItem xs={12} sm={12} md={12}>
         <Card>
           <CardHeader color="primary">
-            <h4 className={classes.cardTitleWhite}>Simple Table</h4>
-            <p className={classes.cardCategoryWhite}>
-              Here is a subtitle for this table
-            </p>
-          </CardHeader>
-          <CardBody>
-            <Table
-              tableHeaderColor="primary"
-              tableHead={["Name", "Country", "City", "Salary"]}
-              tableData={[
-                ["Dakota Rice", "Niger", "Oud-Turnhout", "$36,738"],
-                ["Minerva Hooper", "Curaçao", "Sinaai-Waas", "$23,789"],
-                ["Sage Rodriguez", "Netherlands", "Baileux", "$56,142"],
-                ["Philip Chaney", "Korea, South", "Overland Park", "$38,735"],
-                ["Doris Greene", "Malawi", "Feldkirchen in Kärnten", "$63,542"],
-                ["Mason Porter", "Chile", "Gloucester", "$78,615"],
-              ]}
-            />
-          </CardBody>
-        </Card>
-      </GridItem>
-      <GridItem xs={12} sm={12} md={12}>
-        <Card plain>
-          <CardHeader plain color="primary">
             <h4 className={classes.cardTitleWhite}>
-              Table on Plain Background
+              Spliting costs Álison-Ana
             </h4>
-            <p className={classes.cardCategoryWhite}>
-              Here is a subtitle for this table
-            </p>
+            <p className={classes.cardCategoryWhite}>Full balance analysis</p>
           </CardHeader>
           <CardBody>
             <Table
               tableHeaderColor="primary"
-              tableHead={["ID", "Name", "Country", "City", "Salary"]}
+              tableHead={["Owner", "Total", "iShare", "yShare"]}
+              {...console.log(rows)}
               tableData={[
-                ["1", "Dakota Rice", "$36,738", "Niger", "Oud-Turnhout"],
-                ["2", "Minerva Hooper", "$23,789", "Curaçao", "Sinaai-Waas"],
-                ["3", "Sage Rodriguez", "$56,142", "Netherlands", "Baileux"],
                 [
-                  "4",
-                  "Philip Chaney",
-                  "$38,735",
-                  "Korea, South",
-                  "Overland Park",
+                  rows.name || "NA",
+                  parseFloat(rows.total).toFixed(2) || "NA",
+                  parseFloat(rows.iShare).toFixed(2) || "NA",
+                  parseFloat(rows.yShare).toFixed(2) || "NA",
                 ],
-                [
-                  "5",
-                  "Doris Greene",
-                  "$63,542",
-                  "Malawi",
-                  "Feldkirchen in Kärnten",
-                ],
-                ["6", "Mason Porter", "$78,615", "Chile", "Gloucester"],
               ]}
             />
           </CardBody>

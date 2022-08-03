@@ -25,6 +25,8 @@ import TextField from "@mui/material/TextField";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 
+import STATUS from "Utility/status.js";
+
 import {
   FormContainer,
   SubmitButton,
@@ -51,6 +53,13 @@ const styles = {
     marginBottom: "3px",
     textDecoration: "none",
   },
+  rex: {
+    display: "inline-block",
+    margin: "5px 5px 5px 5px",
+  },
+  padding: {
+    padding: "15px 15px 15px 15px",
+  },
 };
 
 const useStyles = makeStyles(styles);
@@ -65,6 +74,7 @@ const columns = [
     label: "Name",
   },
   { id: "Value", label: "Price" },
+  { id: "iShare", label: "iShare" },
   { id: "Date", label: "Date" },
   { id: "Options", label: "Options" },
 ];
@@ -94,8 +104,6 @@ async function rowsData() {
       }
     );
 
-    const data_purchase = await response_purchase.json();
-
     let response_income = await fetch(
       `http://localhost:8080/api/v1/income/user/${user_id}`,
       {
@@ -110,17 +118,51 @@ async function rowsData() {
       }
     );
 
+    let response_split = await fetch(
+      `http://localhost:8080/api/v1/split/user/${user_id}`,
+      {
+        method: "GET",
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          Authorization:
+            "Bearer " + window.sessionStorage.getItem("access_token"),
+        },
+      }
+    );
+
+    const data_purchase = await response_purchase.json();
     const data_income = await response_income.json();
-    //let data = [...data_purchase, ...data_income];
-    //console.log(data);
+    const data_split = await response_split.json();
+
+    // Purchase without split
     for (const element of data_purchase) {
-      element.status = 0;
+      if (element.split == null) {
+        element.status = STATUS.NO_SPLIT;
+      } else {
+        element.status = STATUS.WITH_SPLIT;
+        element.iShare = (
+          ((100 - element.split.weight) / 100) *
+          element.value
+        ).toFixed(2);
+        element.weight = 100 - element.split.weight;
+      }
       createData(element);
     }
     for (const element of data_income) {
-      element.status = 1;
+      element.status = STATUS.INCOME;
       createData(element);
     }
+    for (const element of data_split) {
+      element.status = STATUS.FROM_SPLIT;
+      element.iShare = ((element.split.weight / 100) * element.value).toFixed(
+        2
+      );
+      element.weight = element.split.weight;
+      createData(element);
+    }
+
     return rows_aux;
   } catch (e) {
     console.log(e.message);
@@ -135,6 +177,9 @@ export default function UserProfile() {
   const [rows, setRows] = React.useState([]);
   const [purchaseDate, setPurchaseDate] = React.useState(new Date());
   const [incomeDate, setIncomeDate] = React.useState(new Date());
+
+  let TOTAL_VALUE = 0;
+  let TOTAL_ISHARE = 0;
 
   function sortArray(data) {
     data.sort(function (a, b) {
@@ -227,7 +272,36 @@ export default function UserProfile() {
     setPage(0);
   };
 
-  const handleClick = (event) => {
+  const handleSplitClick = async (event) => {
+    let purchase_id = event.target.getAttribute("id");
+    let user_id = window.sessionStorage.getItem("user_id");
+    const w = document.getElementById("weight" + purchase_id);
+    const u = document.getElementById("email" + purchase_id);
+    let split = {
+      weight: w.value,
+      userEmail: u.value,
+    };
+    try {
+      await fetch(
+        `http://localhost:8080/api/v1/split/user/${user_id}/purchase/${purchase_id}`,
+        {
+          method: "POST",
+          headers: {
+            "Access-Control-Allow-Origin": "*",
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization:
+              "Bearer " + window.sessionStorage.getItem("access_token"),
+          },
+          body: JSON.stringify(split),
+        }
+      );
+      w.value = "";
+    } catch (e) {
+      console.log(e);
+    }
+  };
+  const handleEditClick = (event) => {
     let id = event.target.getAttribute("id");
     let status = event.target.getAttribute("value");
     console.log(status, id);
@@ -250,7 +324,7 @@ export default function UserProfile() {
                         {columns.map((column) => (
                           <TableCell
                             key={column.id}
-                            align={column.align}
+                            align="center"
                             style={{ minWidth: column.minWidth }}
                           >
                             {column.label}
@@ -260,35 +334,130 @@ export default function UserProfile() {
                     </TableHead>
                     <TableBody id="tablebody">
                       {rows.map((item) => {
+                        if (item.iShare)
+                          TOTAL_ISHARE += parseFloat(item.iShare);
+                        if (item.status != STATUS.INCOME)
+                          TOTAL_VALUE += parseFloat(item.value);
+
                         return (
                           <tr key={Math.random()}>
                             <th scope="row">{item.type}</th>
-                            <td>{item.subType || item.name}</td>
-                            <td>{item.value}</td>
-                            <td>{item.dop || item.doi}</td>
-                            <td>
-                              <button
-                                id={item.id}
-                                value={item.status}
-                                onClick={handleClick}
-                              >
-                                Edit
-                              </button>
-                              {item.status == 0 ? (
-                                <button
-                                  id={item.id}
-                                  value={item.status}
-                                  onClick={handleClick}
-                                >
-                                  Split
-                                </button>
+                            <td align="center">{item.subType || item.name}</td>
+                            <td
+                              align="center"
+                              bgcolor={
+                                item.status == STATUS.INCOME
+                                  ? "98FB98"
+                                  : "#ff8080"
+                              }
+                            >
+                              {item.value}
+                            </td>
+                            <td align="center">
+                              {item.status == STATUS.WITH_SPLIT ||
+                              item.status == STATUS.FROM_SPLIT
+                                ? item.iShare
+                                : ""}
+                            </td>
+                            <td align="center">{item.dop || item.doi}</td>
+                            <td align="center">
+                              {item.status == STATUS.NO_SPLIT ? (
+                                <div>
+                                  <div className={classes.rex}>
+                                    <button
+                                      id={item.id}
+                                      value={item.status}
+                                      onClick={handleEditClick}
+                                    >
+                                      Edit
+                                    </button>
+                                  </div>
+                                  <div className={classes.rex}>
+                                    <div className="input-group">
+                                      <input
+                                        id={"weight" + item.id}
+                                        type="text"
+                                        name="split_value"
+                                        className="form-control"
+                                        placeholder="0-100"
+                                        size="1"
+                                      ></input>
+                                      <select
+                                        id={"email" + item.id}
+                                        name="split_userEmail"
+                                      >
+                                        <option value="anacatarinarebelo98@gmail.com">
+                                          Ana Catarina
+                                        </option>
+                                        <option
+                                          className={classes.padding}
+                                          value="al.vrdias@gmail.com"
+                                        >
+                                          Álison Dias
+                                        </option>
+                                      </select>
+                                      <span>
+                                        <button
+                                          id={item.id}
+                                          value={item.status}
+                                          className="btn btn-primary"
+                                          onClick={handleSplitClick}
+                                        >
+                                          Split
+                                        </button>
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+                              ) : item.status == STATUS.WITH_SPLIT ||
+                                item.status == STATUS.FROM_SPLIT ? (
+                                <>
+                                  <button
+                                    id={item.id}
+                                    value={item.status}
+                                    onClick={handleEditClick}
+                                  >
+                                    Edit
+                                  </button>
+                                  <input
+                                    id={"weight" + item.id}
+                                    type="text"
+                                    name="split_value"
+                                    className="form-control"
+                                    placeholder={item.weight + "%"}
+                                    size="1"
+                                    disabled
+                                  ></input>
+                                </>
                               ) : (
-                                <></>
+                                <>
+                                  <button
+                                    id={item.id}
+                                    value={item.status}
+                                    onClick={handleEditClick}
+                                  >
+                                    Edit
+                                  </button>
+                                </>
                               )}
                             </td>
                           </tr>
                         );
                       })}
+                    </TableBody>
+                    <TableBody>
+                      {
+                        <tr bgcolor="#E6E1EF">
+                          <td align="center">Total</td>
+                          <td align="center">iExpenses</td>
+                          <td align="center">{TOTAL_VALUE.toFixed(2)}</td>
+                          <td align="center">{TOTAL_ISHARE.toFixed(2)}</td>
+                          <td align="center">
+                            {new Date().toISOString().split("T")[0]}
+                          </td>
+                          <td align="center"></td>
+                        </tr>
+                      }
                     </TableBody>
                   </Table>
                 </TableContainer>
