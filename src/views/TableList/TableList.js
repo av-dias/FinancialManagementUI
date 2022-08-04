@@ -47,15 +47,15 @@ function checkDept(json) {
     if (json.Self.yShare > json.Given.iShare) {
       let balance = [
         "Balance",
-        json.Given.name,
+        "Debt",
         0,
-        parseFloat(json.Self.yShare - json.Given.iShare.toFixed(2)),
+        parseFloat(json.Self.yShare - json.Given.iShare).toFixed(2),
       ];
       return balance;
     } else
       return [
         "Balance",
-        json.Self.name,
+        "Debt",
         parseFloat(json.Given.iShare - json.Self.yShare).toFixed(2),
         0,
       ];
@@ -136,7 +136,12 @@ export default function TableList() {
             <CardBody>
               <Table
                 tableHeaderColor="primary"
-                tableHead={["Owner", "Total", "iShare", "yShare"]}
+                tableHead={[
+                  "Owner",
+                  "Total",
+                  rows.Self.name + " Share",
+                  rows.Given.name + " Share",
+                ]}
                 tableData={[
                   [
                     rows.Self.name || "NA",

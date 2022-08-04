@@ -13,6 +13,7 @@ import styles from "assets/jss/material-dashboard-react/components/tableStyle.js
 const useStyles = makeStyles(styles);
 
 export default function CustomTable(props) {
+  let counter = 0;
   const classes = useStyles();
   const { tableHead, tableData, tableHeaderColor } = props;
   return (
@@ -39,8 +40,15 @@ export default function CustomTable(props) {
             return (
               <TableRow key={key} className={classes.tableBodyRow}>
                 {prop.map((prop, key) => {
+                  counter++;
                   return (
-                    <TableCell className={classes.tableCell} key={key}>
+                    <TableCell
+                      className={classes.tableCell}
+                      key={key}
+                      bgColor={
+                        counter == 4 ? "98FB98" : counter == 7 ? "#ff8080" : ""
+                      }
+                    >
                       {prop}
                     </TableCell>
                   );
