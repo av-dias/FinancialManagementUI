@@ -41,6 +41,28 @@ const styles = {
 
 const useStyles = makeStyles(styles);
 
+function checkDept(json) {
+  if (json && json.Given && json.Self) {
+    console.log(json.Self.iShare, json.Given.yShare);
+    if (json.Self.yShare > json.Given.iShare) {
+      let balance = [
+        "Balance",
+        json.Given.name,
+        0,
+        parseFloat(json.Self.yShare - json.Given.iShare.toFixed(2)),
+      ];
+      return balance;
+    } else
+      return [
+        "Balance",
+        json.Self.name,
+        parseFloat(json.Given.iShare - json.Self.yShare).toFixed(2),
+        0,
+      ];
+  }
+  return ["Balance", "NA", "NA", "NA"];
+}
+
 //let rows_aux = [{ ola: 1 }];
 
 /* function createData(info) {
@@ -49,7 +71,7 @@ const useStyles = makeStyles(styles);
 
 export default function TableList() {
   const classes = useStyles();
-  const [rows, setRows] = React.useState([]);
+  const [rows, setRows] = React.useState({});
 
   async function loadData() {
     try {
@@ -71,15 +93,20 @@ export default function TableList() {
       );
 
       const data = await response.json();
-      let json;
-      data.stats.forEach((item) => {
+      let json = {};
+      data.Self.forEach((item) => {
         //let id = item.substring(0, item.indexOf("="));
-        json = JSON.parse(item.substring(item.indexOf("=") + 1));
-        json.id = user_id;
-        json.name = user_name;
+        json.Self = JSON.parse(item.substring(item.indexOf("=") + 1));
+        json.Self.id = user_id;
+        json.Self.name = user_name;
       });
 
-      //createData(json);
+      data.Given.forEach((item) => {
+        let id = item.substring(0, item.indexOf("="));
+        json.Given = JSON.parse(item.substring(item.indexOf("=") + 1));
+        json.Given.id = id;
+        json.Given.name = data.Names[id];
+      });
 
       return json;
     } catch (e) {
@@ -87,40 +114,62 @@ export default function TableList() {
     }
   }
 
-  useEffect(() => {
-    loadData().then((data) => {
-      //console.log(data);
+  useEffect(async () => {
+    await loadData().then((data) => {
       setRows(data);
     });
   }, []);
 
-  return (
-    <GridContainer>
-      <GridItem xs={12} sm={12} md={12}>
-        <Card>
-          <CardHeader color="primary">
-            <h4 className={classes.cardTitleWhite}>
-              Spliting costs Álison-Ana
-            </h4>
-            <p className={classes.cardCategoryWhite}>Full balance analysis</p>
-          </CardHeader>
-          <CardBody>
-            <Table
-              tableHeaderColor="primary"
-              tableHead={["Owner", "Total", "iShare", "yShare"]}
-              {...console.log(rows)}
-              tableData={[
-                [
-                  rows.name || "NA",
-                  parseFloat(rows.total).toFixed(2) || "NA",
-                  parseFloat(rows.iShare).toFixed(2) || "NA",
-                  parseFloat(rows.yShare).toFixed(2) || "NA",
-                ],
-              ]}
-            />
-          </CardBody>
-        </Card>
-      </GridItem>
-    </GridContainer>
-  );
+  if (rows.Given || rows.Self) {
+    return (
+      <GridContainer>
+        <GridItem xs={12} sm={12} md={12}>
+          <Card>
+            <CardHeader color="primary">
+              <h4 className={classes.cardTitleWhite}>
+                Spliting {rows.Self.name}-{rows.Given.name}
+              </h4>
+              <p className={classes.cardCategoryWhite}>
+                {rows.Self.name} analysis
+              </p>
+            </CardHeader>
+            <CardBody>
+              <Table
+                tableHeaderColor="primary"
+                tableHead={["Owner", "Total", "iShare", "yShare"]}
+                tableData={[
+                  [
+                    rows.Self.name || "NA",
+                    parseFloat(rows.Self.total).toFixed(2) || "NA",
+                    parseFloat(rows.Self.iShare).toFixed(2) || "NA",
+                    parseFloat(rows.Self.yShare).toFixed(2) || "NA",
+                  ],
+                  [
+                    rows.Given.name || "NA",
+                    parseFloat(rows.Given.total).toFixed(2) || "NA",
+                    parseFloat(rows.Given.iShare).toFixed(2) || "NA",
+                    parseFloat(rows.Given.yShare).toFixed(2) || "NA",
+                  ],
+                  [
+                    "Total",
+                    parseFloat(rows.Given.total + rows.Self.total).toFixed(2) ||
+                      "NA",
+                    parseFloat(rows.Given.iShare + rows.Self.iShare).toFixed(
+                      2
+                    ) || "NA",
+                    parseFloat(rows.Given.yShare + rows.Self.yShare).toFixed(
+                      2
+                    ) || "NA",
+                  ],
+                  checkDept(rows),
+                ]}
+              />
+            </CardBody>
+          </Card>
+        </GridItem>
+      </GridContainer>
+    );
+  } else {
+    return null;
+  }
 }

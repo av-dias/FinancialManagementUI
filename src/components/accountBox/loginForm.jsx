@@ -44,7 +44,6 @@ export function LoginForm() {
       });
       if (response.status == 200) {
         const data = await response.json();
-        console.log(jwt_decode(data.access_token));
         window.sessionStorage.setItem("access_token", data.access_token);
         window.sessionStorage.setItem("refresh_token", data.refresh_token);
         window.sessionStorage.setItem(
