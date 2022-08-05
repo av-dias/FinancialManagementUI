@@ -45,7 +45,7 @@ export default function CustomTable(props) {
                     <TableCell
                       className={classes.tableCell}
                       key={key}
-                      bgColor={
+                      bgcolor={
                         counter == 4 ? "98FB98" : counter == 7 ? "#ff8080" : ""
                       }
                     >

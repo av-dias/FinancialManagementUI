@@ -42,25 +42,30 @@ const styles = {
 const useStyles = makeStyles(styles);
 
 function checkDept(json) {
+  let result = {
+    name: "NA",
+    value: "NA",
+  };
   if (json && json.Given && json.Self) {
     console.log(json.Self.iShare, json.Given.yShare);
     if (json.Self.yShare > json.Given.iShare) {
-      let balance = [
-        "Balance",
-        "Debt",
-        0,
-        parseFloat(json.Self.yShare - json.Given.iShare).toFixed(2),
-      ];
-      return balance;
+      result = {
+        name: json.Given.name,
+        value: parseFloat(json.Self.yShare - json.Given.iShare).toFixed(2),
+      };
     } else
-      return [
-        "Balance",
-        "Debt",
-        parseFloat(json.Given.iShare - json.Self.yShare).toFixed(2),
-        0,
-      ];
+      result = {
+        name: json.Self.name,
+        value: parseFloat(json.Given.iShare - json.Self.yShare).toFixed(2),
+      };
   }
-  return ["Balance", "NA", "NA", "NA"];
+  return (
+    <div>
+      <p>
+        {result.name} is in dept by {result.value}€.
+      </p>
+    </div>
+  );
 }
 
 //let rows_aux = [{ ola: 1 }];
@@ -129,16 +134,13 @@ export default function TableList() {
               <h4 className={classes.cardTitleWhite}>
                 Spliting {rows.Self.name}-{rows.Given.name}
               </h4>
-              <p className={classes.cardCategoryWhite}>
-                {rows.Self.name} analysis
-              </p>
             </CardHeader>
             <CardBody>
               <Table
                 tableHeaderColor="primary"
                 tableHead={[
                   "Owner",
-                  "Total",
+                  "Purchases",
                   rows.Self.name + " Share",
                   rows.Given.name + " Share",
                 ]}
@@ -166,10 +168,10 @@ export default function TableList() {
                       2
                     ) || "NA",
                   ],
-                  checkDept(rows),
                 ]}
               />
             </CardBody>
+            <CardBody>{checkDept(rows)}</CardBody>
           </Card>
         </GridItem>
       </GridContainer>
