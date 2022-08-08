@@ -36,6 +36,7 @@ import { loadCharts, completedTasksChart } from "variables/charts.js";
 import styles from "assets/jss/material-dashboard-react/views/dashboardStyle.js";
 
 const useStyles = makeStyles(styles);
+import ADDRESS from "Utility/address.js";
 
 export default function Dashboard() {
   let [dashboardData, setdashboardData] = React.useState({
@@ -52,7 +53,7 @@ export default function Dashboard() {
       let user_id = window.sessionStorage.getItem("user_id");
 
       let response = await fetch(
-        `http://localhost:8080/api/v1/user/${user_id}/purchase/statistics`,
+        `http://${ADDRESS.BACKEND}/api/v1/user/${user_id}/purchase/statistics`,
         {
           method: "GET",
           headers: {

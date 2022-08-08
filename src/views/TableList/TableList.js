@@ -40,6 +40,7 @@ const styles = {
 };
 
 const useStyles = makeStyles(styles);
+import ADDRESS from "Utility/address.js";
 
 function checkDept(json) {
   let result = {
@@ -68,12 +69,6 @@ function checkDept(json) {
   );
 }
 
-//let rows_aux = [{ ola: 1 }];
-
-/* function createData(info) {
-  return rows_aux.push(info);
-} */
-
 export default function TableList() {
   const classes = useStyles();
   const [rows, setRows] = React.useState({});
@@ -84,7 +79,7 @@ export default function TableList() {
       let user_name = window.sessionStorage.getItem("user_name");
 
       let response = await fetch(
-        `http://localhost:8080/api/v1/split/users/user/${user_id}/stats`,
+        `http://${ADDRESS.BACKEND}/api/v1/split/users/user/${user_id}/stats`,
         {
           method: "GET",
           headers: {

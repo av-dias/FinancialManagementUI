@@ -13,6 +13,8 @@ import { useHistory } from "react-router-dom";
 import jwt_decode from "jwt-decode";
 import { AlternateEmailTwoTone } from "@material-ui/icons";
 
+import ADDRESS from "Utility/address.js";
+
 export function LoginForm() {
   const { switchToSignup, switchToForgotPassword } = useContext(AccountContext);
   const history = useHistory();
@@ -34,7 +36,7 @@ export function LoginForm() {
     formBody = formBody.join("&");
 
     async function fetchData() {
-      const response = await fetch("http://localhost:8080/api/v1/login", {
+      const response = await fetch(`http://${ADDRESS.BACKEND}/api/v1/login`, {
         headers: {
           Accept: "application/x-www-form-urlencoded;charset=UTF-8",
           "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",

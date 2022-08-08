@@ -25,8 +25,6 @@ import TextField from "@mui/material/TextField";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 
-import STATUS from "Utility/status.js";
-
 import {
   FormContainer,
   SubmitButton,
@@ -60,114 +58,28 @@ const styles = {
   padding: {
     padding: "15px 15px 15px 15px",
   },
+  child: {
+    display: "inline-block",
+    "vertical-align": "middle",
+    "padding-right": "2em",
+  },
 };
+
+import STATUS from "Utility/status.js";
+import { rowsData, sortArray, truncateMax } from "./rowHandler";
+import ADDRESS from "Utility/address.js";
 
 const useStyles = makeStyles(styles);
 
 const columns = [
   {
-    id: "Type",
-    label: "Type",
-  },
-  {
     id: "subType",
     label: "Name",
   },
-  { id: "Value", label: "Price" },
-  { id: "iShare", label: "iShare" },
+  { id: "iShare", label: "(Total) iShare" },
   { id: "Date", label: "Date" },
   { id: "Options", label: "Options" },
 ];
-
-let rows_aux = [];
-
-function createData(info) {
-  return rows_aux.push(info);
-}
-
-async function rowsData() {
-  rows_aux = [];
-  try {
-    let user_id = window.sessionStorage.getItem("user_id");
-
-    let response_purchase = await fetch(
-      `http://localhost:8080/api/v1/purchase/user/${user_id}`,
-      {
-        method: "GET",
-        headers: {
-          "Access-Control-Allow-Origin": "*",
-          Accept: "application/json",
-          "Content-Type": "application/json",
-          Authorization:
-            "Bearer " + window.sessionStorage.getItem("access_token"),
-        },
-      }
-    );
-
-    let response_income = await fetch(
-      `http://localhost:8080/api/v1/income/user/${user_id}`,
-      {
-        method: "GET",
-        headers: {
-          "Access-Control-Allow-Origin": "*",
-          Accept: "application/json",
-          "Content-Type": "application/json",
-          Authorization:
-            "Bearer " + window.sessionStorage.getItem("access_token"),
-        },
-      }
-    );
-
-    let response_split = await fetch(
-      `http://localhost:8080/api/v1/split/user/${user_id}`,
-      {
-        method: "GET",
-        headers: {
-          "Access-Control-Allow-Origin": "*",
-          Accept: "application/json",
-          "Content-Type": "application/json",
-          Authorization:
-            "Bearer " + window.sessionStorage.getItem("access_token"),
-        },
-      }
-    );
-
-    const data_purchase = await response_purchase.json();
-    const data_income = await response_income.json();
-    const data_split = await response_split.json();
-
-    // Purchase without split
-    for (const element of data_purchase) {
-      if (element.split == null) {
-        element.status = STATUS.NO_SPLIT;
-      } else {
-        element.status = STATUS.WITH_SPLIT;
-        element.iShare = (
-          ((100 - element.split.weight) / 100) *
-          element.value
-        ).toFixed(2);
-        element.weight = 100 - element.split.weight;
-      }
-      createData(element);
-    }
-    for (const element of data_income) {
-      element.status = STATUS.INCOME;
-      createData(element);
-    }
-    for (const element of data_split) {
-      element.status = STATUS.FROM_SPLIT;
-      element.iShare = ((element.split.weight / 100) * element.value).toFixed(
-        2
-      );
-      element.weight = element.split.weight;
-      createData(element);
-    }
-
-    return rows_aux;
-  } catch (e) {
-    console.log(e.message);
-  }
-}
 
 export default function UserProfile() {
   const classes = useStyles();
@@ -177,19 +89,10 @@ export default function UserProfile() {
   const [rows, setRows] = React.useState([]);
   const [purchaseDate, setPurchaseDate] = React.useState(new Date());
   const [incomeDate, setIncomeDate] = React.useState(new Date());
+  const [tableStatus, setTableStatus] = React.useState(STATUS.TABLE.TOTAL);
 
   let TOTAL_VALUE = 0;
   let TOTAL_ISHARE = 0;
-
-  function sortArray(data) {
-    data.sort(function (a, b) {
-      var dateA = new Date(a.dop || a.doi),
-        dateB = new Date(b.dop || a.doi);
-      return dateB - dateA;
-    });
-
-    return data;
-  }
 
   useEffect(() => {
     rowsData().then((data) => {
@@ -212,7 +115,7 @@ export default function UserProfile() {
 
     let Purchase = { value: _value, name: _name, type: _type, dop: _dop };
     try {
-      await fetch(`http://localhost:8080/api/v1/purchase/user/${user_id}`, {
+      await fetch(`http://${ADDRESS.BACKEND}/api/v1/purchase/user/${user_id}`, {
         method: "POST",
         headers: {
           "Access-Control-Allow-Origin": "*",
@@ -246,7 +149,7 @@ export default function UserProfile() {
 
     let Income = { value: _value, type: _type, subType: _subtype, doi: _doi };
     try {
-      await fetch(`http://localhost:8080/api/v1/income/user/${user_id}`, {
+      await fetch(`http://${ADDRESS.BACKEND}/api/v1/income/user/${user_id}`, {
         method: "POST",
         headers: {
           "Access-Control-Allow-Origin": "*",
@@ -257,7 +160,10 @@ export default function UserProfile() {
         },
         body: JSON.stringify(Income),
       });
-      rowsData().then((data) => setRows(data));
+      rowsData().then((data) => {
+        sortArray(data);
+        setRows(data);
+      });
     } catch (err) {
       console.log(err);
     }
@@ -283,7 +189,7 @@ export default function UserProfile() {
     };
     try {
       await fetch(
-        `http://localhost:8080/api/v1/split/user/${user_id}/purchase/${purchase_id}`,
+        `http://${ADDRESS.BACKEND}/api/v1/split/user/${user_id}/purchase/${purchase_id}`,
         {
           method: "POST",
           headers: {
@@ -297,6 +203,10 @@ export default function UserProfile() {
         }
       );
       w.value = "";
+      rowsData().then((data) => {
+        sortArray(data);
+        setRows(data);
+      });
     } catch (e) {
       console.log(e);
     }
@@ -307,13 +217,70 @@ export default function UserProfile() {
     console.log(status, id);
   };
 
+  const handleTableStatus = (event) => {
+    console.log(event);
+    switch (event) {
+      case "TOTAL":
+        setTableStatus(STATUS.TABLE.TOTAL);
+        break;
+      case "SPLIT":
+        setTableStatus(STATUS.TABLE.SPLIT);
+        break;
+      case "NO_SPLIT":
+        setTableStatus(STATUS.TABLE.NO_SPLIT);
+        break;
+      case "GIVEN":
+        setTableStatus(STATUS.TABLE.GIVEN);
+        break;
+      default:
+        setTableStatus(STATUS.TABLE.TOTAL);
+        break;
+    }
+    console.log(tableStatus);
+    setRows([...rows]);
+  };
+
   return (
     <div>
       <GridContainer>
-        <GridItem xs={12} sm={12} md={12}>
+        <GridItem xs={8} sm={8} md={8}>
           <Card>
             <CardHeader color="primary">
-              <h4 className={classes.cardTitleWhite}>Movement History</h4>
+              <div>
+                <div className={classes.child}>
+                  <h4 className={classes.cardTitleWhite}>Movement History</h4>
+                </div>
+                <div className={classes.child}>
+                  <Button
+                    color="warning"
+                    size="sm"
+                    onClick={() => handleTableStatus("TOTAL")}
+                  >
+                    Total
+                  </Button>
+                  <Button
+                    color="warning"
+                    size="sm"
+                    onClick={() => handleTableStatus("SPLIT")}
+                  >
+                    Split
+                  </Button>
+                  <Button
+                    color="warning"
+                    size="sm"
+                    onClick={() => handleTableStatus("NO_SPLIT")}
+                  >
+                    NoSplit
+                  </Button>
+                  <Button
+                    color="warning"
+                    size="sm"
+                    onClick={() => handleTableStatus("GIVEN")}
+                  >
+                    Given
+                  </Button>
+                </div>
+              </div>
             </CardHeader>
             <CardBody>
               <Paper sx={{ width: "100%" }}>
@@ -334,34 +301,53 @@ export default function UserProfile() {
                     </TableHead>
                     <TableBody id="tablebody">
                       {rows.map((item) => {
+                        // *CHECK TABLE STATUS AND SHOW CONTENT
+                        if (tableStatus == STATUS.TABLE.SPLIT) {
+                          if (item.status != STATUS.PURCHASE.WITH_SPLIT) {
+                            return null;
+                          }
+                        } else if (tableStatus == STATUS.TABLE.NO_SPLIT) {
+                          if (item.status != STATUS.PURCHASE.NO_SPLIT) {
+                            return null;
+                          }
+                        } else if (tableStatus == STATUS.TABLE.GIVEN) {
+                          if (item.status != STATUS.PURCHASE.FROM_SPLIT) {
+                            return null;
+                          }
+                        }
+
                         if (item.iShare)
                           TOTAL_ISHARE += parseFloat(item.iShare);
-                        if (item.status != STATUS.INCOME)
+                        if (item.status != STATUS.PURCHASE.INCOME)
                           TOTAL_VALUE += parseFloat(item.value);
 
                         return (
                           <tr key={Math.random()}>
-                            <th scope="row">{item.type}</th>
-                            <td align="center">{item.subType || item.name}</td>
+                            <td align="center">{truncateMax(item.name)}</td>
                             <td
                               align="center"
                               bgcolor={
-                                item.status == STATUS.INCOME
-                                  ? "98FB98"
-                                  : "#ff8080"
+                                item.status == STATUS.PURCHASE.INCOME
+                                  ? "#03C04A"
+                                  : item.weight == 0
+                                  ? "lightblue"
+                                  : item.weight == 100
+                                  ? "tomato"
+                                  : ""
                               }
                             >
-                              {item.value}
-                            </td>
-                            <td align="center">
-                              {item.status == STATUS.WITH_SPLIT ||
-                              item.status == STATUS.FROM_SPLIT
-                                ? item.iShare
+                              {item.status == STATUS.PURCHASE.WITH_SPLIT ||
+                              item.status == STATUS.PURCHASE.FROM_SPLIT
+                                ? `(${item.value}) ` + item.iShare
+                                : item.status == STATUS.PURCHASE.NO_SPLIT
+                                ? item.value
+                                : item.status == STATUS.PURCHASE.INCOME
+                                ? item.value
                                 : ""}
                             </td>
                             <td align="center">{item.dop || item.doi}</td>
                             <td align="center">
-                              {item.status == STATUS.NO_SPLIT ? (
+                              {item.status == STATUS.PURCHASE.NO_SPLIT ? (
                                 <div>
                                   <div className={classes.rex}>
                                     <button
@@ -409,8 +395,8 @@ export default function UserProfile() {
                                     </div>
                                   </div>
                                 </div>
-                              ) : item.status == STATUS.WITH_SPLIT ||
-                                item.status == STATUS.FROM_SPLIT ? (
+                              ) : item.status == STATUS.PURCHASE.WITH_SPLIT ||
+                                item.status == STATUS.PURCHASE.FROM_SPLIT ? (
                                 <>
                                   <button
                                     id={item.id}
@@ -449,8 +435,6 @@ export default function UserProfile() {
                       {
                         <tr bgcolor="#E6E1EF">
                           <td align="center">Total</td>
-                          <td align="center">iExpenses</td>
-                          <td align="center">{TOTAL_VALUE.toFixed(2)}</td>
                           <td align="center">{TOTAL_ISHARE.toFixed(2)}</td>
                           <td align="center">
                             {new Date().toISOString().split("T")[0]}
@@ -474,27 +458,27 @@ export default function UserProfile() {
             </CardBody>
           </Card>
         </GridItem>
-        <GridItem xs={12} sm={12} md={4}>
+        <GridItem xs={2} sm={2} md={2}>
           <Card profile>
             <CardBody profile>
               <FormContainer id="purchaseForm" onSubmit={purchaseHandle}>
                 <a>Purchases</a>
                 <CustomInput
-                  labelText="Product/Service Name"
+                  labelText="Name"
                   id="product_service_name"
                   formControlProps={{
                     fullWidth: true,
                   }}
                 />
                 <CustomInput
-                  labelText="Product/Service Price"
+                  labelText="Price"
                   id="product_service_price"
                   formControlProps={{
                     fullWidth: true,
                   }}
                 />
                 <CustomInput
-                  labelText="Product/Service Sub-Type"
+                  labelText="Type"
                   id="product_service_subtype"
                   formControlProps={{
                     fullWidth: true,
@@ -515,19 +499,14 @@ export default function UserProfile() {
                   />
                 </LocalizationProvider>
 
-                <SubmitButton
-                  color="primary"
-                  type="submit"
-                  form="purchaseForm"
-                  round
-                >
+                <Button color="primary" type="submit" form="purchaseForm" round>
                   Insert
-                </SubmitButton>
+                </Button>
               </FormContainer>
             </CardBody>
           </Card>
         </GridItem>
-        <GridItem xs={12} sm={12} md={4}>
+        <GridItem xs={4} sm={4} md={2}>
           <Card profile>
             <CardBody profile>
               <FormContainer id="incomeForm" onSubmit={incomeHandle}>
@@ -540,7 +519,7 @@ export default function UserProfile() {
                   }}
                 />
                 <CustomInput
-                  labelText="Sub-Type"
+                  labelText="Origin"
                   id="income_subType"
                   formControlProps={{
                     fullWidth: false,
@@ -567,14 +546,9 @@ export default function UserProfile() {
                     renderInput={(params) => <TextField {...params} />}
                   />
                 </LocalizationProvider>
-                <SubmitButton
-                  color="primary"
-                  type="submit"
-                  form="incomeForm"
-                  round
-                >
+                <Button color="primary" type="submit" form="incomeForm" round>
                   Insert
-                </SubmitButton>
+                </Button>
               </FormContainer>
             </CardBody>
           </Card>
