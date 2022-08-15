@@ -25,6 +25,7 @@ export default function CustomInput(props) {
     error,
     success,
     rtlActive,
+    ...rest
   } = props;
 
   const labelClasses = classNames({
@@ -62,6 +63,7 @@ export default function CustomInput(props) {
         </InputLabel>
       ) : null}
       <Input
+        {...rest}
         classes={{
           root: marginTop,
           disabled: classes.disabled,

@@ -11,6 +11,7 @@ import CardHeader from "components/Card/CardHeader.js";
 import CardAvatar from "components/Card/CardAvatar.js";
 import CardBody from "components/Card/CardBody.js";
 import CardFooter from "components/Card/CardFooter.js";
+import Popup from "components/Popup/Popup.js";
 
 import Paper from "@mui/material/Paper";
 import Table from "@mui/material/Table";
@@ -63,6 +64,12 @@ const styles = {
     "vertical-align": "middle",
     "padding-right": "2em",
   },
+  childRight: {
+    display: "inline-block",
+    "padding-right": "2em",
+    position: "absolute",
+    right: 0,
+  },
 };
 
 import STATUS from "Utility/status.js";
@@ -90,50 +97,7 @@ export default function UserProfile() {
   const [purchaseDate, setPurchaseDate] = React.useState(new Date());
   const [incomeDate, setIncomeDate] = React.useState(new Date());
   const [tableStatus, setTableStatus] = React.useState(STATUS.TABLE.TOTAL);
-
-  let TOTAL_VALUE = 0;
-  let TOTAL_ISHARE = 0;
-
-  useEffect(() => {
-    rowsData().then((data) => {
-      sortArray(data);
-      setRows(data);
-    });
-  }, []);
-
-  const purchaseHandle = async (e) => {
-    e.preventDefault();
-
-    let _name = document.getElementById("product_service_name").value;
-    let _value = document.getElementById("product_service_price").value;
-    let _type = document.getElementById("product_service_subtype").value;
-    let date = new Date(purchaseDate);
-    let _dop = new Date(date.setTime(date.getTime() + 1 * 60 * 60 * 1000));
-    //let _dop = purchaseDate;
-
-    let user_id = window.sessionStorage.getItem("user_id");
-
-    let Purchase = { value: _value, name: _name, type: _type, dop: _dop };
-    try {
-      await fetch(`http://${ADDRESS.BACKEND}/api/v1/purchase/user/${user_id}`, {
-        method: "POST",
-        headers: {
-          "Access-Control-Allow-Origin": "*",
-          Accept: "application/json",
-          "Content-Type": "application/json",
-          Authorization:
-            "Bearer " + window.sessionStorage.getItem("access_token"),
-        },
-        body: JSON.stringify(Purchase),
-      });
-      rowsData().then((data) => {
-        sortArray(data);
-        setRows(data);
-      });
-    } catch (err) {
-      console.log(err);
-    }
-  };
+  const [isOpen, setIsOpen] = React.useState(false);
 
   const incomeHandle = async (e) => {
     e.preventDefault();
@@ -163,11 +127,171 @@ export default function UserProfile() {
       rowsData().then((data) => {
         sortArray(data);
         setRows(data);
+        document.getElementById("income_type").value = "";
+        document.getElementById("income_subType").value = "";
+        document.getElementById("income_value").value = "";
       });
     } catch (err) {
       console.log(err);
     }
   };
+
+  const purchaseHandle = async (e) => {
+    e.preventDefault();
+    console.log("TESTE");
+
+    let _name = document.getElementById("product_service_name").value;
+    let _value = document.getElementById("product_service_price").value;
+    let _type = document.getElementById("product_service_subtype").value;
+    let date = new Date(purchaseDate);
+    let _dop = new Date(date.setTime(date.getTime() + 1 * 60 * 60 * 1000));
+    //let _dop = purchaseDate;
+
+    let user_id = window.sessionStorage.getItem("user_id");
+
+    let Purchase = { value: _value, name: _name, type: _type, dop: _dop };
+
+    console.log(Purchase);
+    try {
+      await fetch(`http://${ADDRESS.BACKEND}/api/v1/purchase/user/${user_id}`, {
+        method: "POST",
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          Authorization:
+            "Bearer " + window.sessionStorage.getItem("access_token"),
+        },
+        body: JSON.stringify(Purchase),
+      });
+      rowsData().then((data) => {
+        sortArray(data);
+        setRows(data);
+        document.getElementById("product_service_name").value = "";
+        document.getElementById("product_service_price").value = "";
+        document.getElementById("product_service_subtype").value = "";
+      });
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  const purchaseForm = (
+    <GridContainer>
+      <GridItem xs={4} sm={4} md={4}>
+        <Card profile>
+          <CardHeader>
+            <FormContainer id="purchaseForm">
+              <a>Purchases</a>
+              <CustomInput
+                labelText="Name"
+                id="product_service_name"
+                formControlProps={{
+                  fullWidth: true,
+                }}
+              />
+              <CustomInput
+                labelText="Type"
+                id="product_service_subtype"
+                formControlProps={{
+                  fullWidth: true,
+                }}
+              />
+              <CustomInput
+                labelText="Price"
+                type="number"
+                id="product_service_price"
+                formControlProps={{
+                  fullWidth: true,
+                }}
+              />
+              <LocalizationProvider dateAdapter={AdapterDateFns}>
+                <DatePicker
+                  id="product_service_dop"
+                  disableFuture
+                  label="Date of Purchase"
+                  openTo="year"
+                  views={["year", "month", "day"]}
+                  value={purchaseDate}
+                  onChange={(newValue) => {
+                    setPurchaseDate(newValue);
+                  }}
+                  renderInput={(params) => <TextField {...params} />}
+                />
+              </LocalizationProvider>
+
+              <Button color="primary" onClick={purchaseHandle} round>
+                Insert
+              </Button>
+            </FormContainer>
+          </CardHeader>
+        </Card>
+      </GridItem>
+      <GridItem xs={4} sm={4} md={4}>
+        <Card profile>
+          <CardHeader>
+            <FormContainer id="incomeForm">
+              <a>Income</a>
+              <CustomInput
+                labelText="Type"
+                id="income_type"
+                formControlProps={{
+                  fullWidth: false,
+                }}
+              />
+              <CustomInput
+                labelText="Origin"
+                id="income_subType"
+                formControlProps={{
+                  fullWidth: false,
+                }}
+              />
+              <CustomInput
+                labelText="Value"
+                id="income_value"
+                type="number"
+                formControlProps={{
+                  fullWidth: true,
+                }}
+              />
+              <LocalizationProvider dateAdapter={AdapterDateFns}>
+                <DatePicker
+                  id="income_doi"
+                  disableFuture
+                  label="Date of Income"
+                  openTo="year"
+                  views={["year", "month", "day"]}
+                  value={incomeDate}
+                  onChange={(newValue) => {
+                    setIncomeDate(newValue);
+                  }}
+                  renderInput={(params) => <TextField {...params} />}
+                />
+              </LocalizationProvider>
+              <Button color="primary" onClick={incomeHandle} round>
+                Insert
+              </Button>
+            </FormContainer>
+          </CardHeader>
+        </Card>
+      </GridItem>
+    </GridContainer>
+  );
+  //const incomeForm = 0;
+
+  let TOTAL_VALUE = 0;
+  let TOTAL_ISHARE = 0;
+
+  const togglePopup = () => {
+    setIsOpen(!isOpen);
+  };
+
+  useEffect(() => {
+    rowsData().then((data) => {
+      sortArray(data);
+      setRows(data);
+    });
+  }, []);
 
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
@@ -218,7 +342,6 @@ export default function UserProfile() {
   };
 
   const handleTableStatus = (event) => {
-    console.log(event);
     switch (event) {
       case "TOTAL":
         setTableStatus(STATUS.TABLE.TOTAL);
@@ -236,7 +359,6 @@ export default function UserProfile() {
         setTableStatus(STATUS.TABLE.TOTAL);
         break;
     }
-    console.log(tableStatus);
     setRows([...rows]);
   };
 
@@ -279,6 +401,15 @@ export default function UserProfile() {
                   >
                     Given
                   </Button>
+                  <div className={classes.childRight}>
+                    <Button
+                      color="rose"
+                      size="sm"
+                      onClick={() => togglePopup()}
+                    >
+                      Purchase/Income
+                    </Button>
+                  </div>
                 </div>
               </div>
             </CardHeader>
@@ -458,102 +589,8 @@ export default function UserProfile() {
             </CardBody>
           </Card>
         </GridItem>
-        <GridItem xs={2} sm={2} md={2}>
-          <Card profile>
-            <CardBody profile>
-              <FormContainer id="purchaseForm" onSubmit={purchaseHandle}>
-                <a>Purchases</a>
-                <CustomInput
-                  labelText="Name"
-                  id="product_service_name"
-                  formControlProps={{
-                    fullWidth: true,
-                  }}
-                />
-                <CustomInput
-                  labelText="Price"
-                  id="product_service_price"
-                  formControlProps={{
-                    fullWidth: true,
-                  }}
-                />
-                <CustomInput
-                  labelText="Type"
-                  id="product_service_subtype"
-                  formControlProps={{
-                    fullWidth: true,
-                  }}
-                />
-                <LocalizationProvider dateAdapter={AdapterDateFns}>
-                  <DatePicker
-                    id="product_service_dop"
-                    disableFuture
-                    label="Date of Purchase"
-                    openTo="year"
-                    views={["year", "month", "day"]}
-                    value={purchaseDate}
-                    onChange={(newValue) => {
-                      setPurchaseDate(newValue);
-                    }}
-                    renderInput={(params) => <TextField {...params} />}
-                  />
-                </LocalizationProvider>
-
-                <Button color="primary" type="submit" form="purchaseForm" round>
-                  Insert
-                </Button>
-              </FormContainer>
-            </CardBody>
-          </Card>
-        </GridItem>
-        <GridItem xs={4} sm={4} md={2}>
-          <Card profile>
-            <CardBody profile>
-              <FormContainer id="incomeForm" onSubmit={incomeHandle}>
-                <a>Income</a>
-                <CustomInput
-                  labelText="Type"
-                  id="income_type"
-                  formControlProps={{
-                    fullWidth: false,
-                  }}
-                />
-                <CustomInput
-                  labelText="Origin"
-                  id="income_subType"
-                  formControlProps={{
-                    fullWidth: false,
-                  }}
-                />
-                <CustomInput
-                  labelText="Value"
-                  id="income_value"
-                  formControlProps={{
-                    fullWidth: true,
-                  }}
-                />
-                <LocalizationProvider dateAdapter={AdapterDateFns}>
-                  <DatePicker
-                    id="income_doi"
-                    disableFuture
-                    label="Date of Income"
-                    openTo="year"
-                    views={["year", "month", "day"]}
-                    value={incomeDate}
-                    onChange={(newValue) => {
-                      setIncomeDate(newValue);
-                    }}
-                    renderInput={(params) => <TextField {...params} />}
-                  />
-                </LocalizationProvider>
-                <Button color="primary" type="submit" form="incomeForm" round>
-                  Insert
-                </Button>
-              </FormContainer>
-            </CardBody>
-          </Card>
-        </GridItem>
       </GridContainer>
+      {isOpen && <Popup content={purchaseForm} handleClose={togglePopup} />}
     </div>
   );
 }

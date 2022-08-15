@@ -27,6 +27,7 @@ import Home from "layouts/Home.js";
 import "assets/css/material-dashboard-react.css?v=1.10.0";
 import "assets/css/index.css";
 import "assets/css/App.css";
+import "assets/css/pop.css";
 
 ReactDOM.render(
   <BrowserRouter>
