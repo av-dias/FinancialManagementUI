@@ -78,7 +78,17 @@ import ADDRESS from "Utility/address.js";
 
 const useStyles = makeStyles(styles);
 
-const columns = [
+const columns_movement = [
+  {
+    id: "subType",
+    label: "Name",
+  },
+  { id: "iShare", label: "(Total) iShare" },
+  { id: "Date", label: "Date" },
+  { id: "Options", label: "Options" },
+];
+
+const columns_house = [
   {
     id: "subType",
     label: "Name",
@@ -98,6 +108,9 @@ export default function UserProfile() {
   const [incomeDate, setIncomeDate] = React.useState(new Date());
   const [tableStatus, setTableStatus] = React.useState(STATUS.TABLE.TOTAL);
   const [isOpen, setIsOpen] = React.useState(false);
+  const [isPopup, setIsPopup] = React.useState(0);
+  const [lastItem, setlastItem] = React.useState();
+  const [lastItemPos, setLastItemPos] = React.useState({ x: 0, y: 0 });
 
   const incomeHandle = async (e) => {
     e.preventDefault();
@@ -138,7 +151,6 @@ export default function UserProfile() {
 
   const purchaseHandle = async (e) => {
     e.preventDefault();
-    console.log("TESTE");
 
     let _name = document.getElementById("product_service_name").value;
     let _value = document.getElementById("product_service_price").value;
@@ -151,7 +163,6 @@ export default function UserProfile() {
 
     let Purchase = { value: _value, name: _name, type: _type, dop: _dop };
 
-    console.log(Purchase);
     try {
       await fetch(`http://${ADDRESS.BACKEND}/api/v1/purchase/user/${user_id}`, {
         method: "POST",
@@ -277,13 +288,56 @@ export default function UserProfile() {
       </GridItem>
     </GridContainer>
   );
-  //const incomeForm = 0;
+
+  const splitForm = (item) => (
+    <div
+      style={{
+        position: "absolute",
+        left: lastItemPos.x,
+        top: "calc(100vh - 85vh - 20px)" - lastItemPos.y,
+        backgroundColor: "red",
+      }}
+    >
+      <input
+        id={"weight" + item.id}
+        type="text"
+        name="split_value"
+        className="form-control"
+        placeholder="0-100"
+        size="1"
+      ></input>
+      <select id={"email" + item.id} name="split_userEmail">
+        <option value="anacatarinarebelo98@gmail.com">Ana Catarina</option>
+        <option className={classes.padding} value="al.vrdias@gmail.com">
+          Álison Dias
+        </option>
+      </select>
+    </div>
+  );
+
+  const showPopup = () => {
+    switch (isPopup) {
+      case "MOVIMENT":
+        return purchaseForm;
+      case "HOUSE":
+        console.log(lastItemPos);
+        return splitForm(lastItem);
+      default:
+        setTableStatus(STATUS.TABLE.TOTAL);
+        break;
+    }
+  };
 
   let TOTAL_VALUE = 0;
   let TOTAL_ISHARE = 0;
 
-  const togglePopup = () => {
+  const togglePopup = (type, item, mouseEvent) => {
     setIsOpen(!isOpen);
+    setIsPopup(type);
+    if (item) {
+      setlastItem(item);
+      setLastItemPos({ x: mouseEvent.clientX, y: mouseEvent.clientY });
+    }
   };
 
   useEffect(() => {
@@ -405,7 +459,7 @@ export default function UserProfile() {
                     <Button
                       color="rose"
                       size="sm"
-                      onClick={() => togglePopup()}
+                      onClick={() => togglePopup("MOVIMENT")}
                     >
                       Purchase/Income
                     </Button>
@@ -419,7 +473,204 @@ export default function UserProfile() {
                   <Table stickyHeader aria-label="sticky table">
                     <TableHead>
                       <TableRow>
-                        {columns.map((column) => (
+                        {columns_movement.map((column) => (
+                          <TableCell
+                            key={column.id}
+                            align="center"
+                            style={{ minWidth: column.minWidth }}
+                          >
+                            {column.label}
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    </TableHead>
+                    <TableBody id="tablebody">
+                      {rows.map((item) => {
+                        // *CHECK TABLE STATUS AND SHOW CONTENT
+                        if (tableStatus == STATUS.TABLE.SPLIT) {
+                          if (item.status != STATUS.PURCHASE.WITH_SPLIT) {
+                            return null;
+                          }
+                        } else if (tableStatus == STATUS.TABLE.NO_SPLIT) {
+                          if (item.status != STATUS.PURCHASE.NO_SPLIT) {
+                            return null;
+                          }
+                        } else if (tableStatus == STATUS.TABLE.GIVEN) {
+                          if (item.status != STATUS.PURCHASE.FROM_SPLIT) {
+                            return null;
+                          }
+                        }
+
+                        if (item.iShare)
+                          TOTAL_ISHARE += parseFloat(item.iShare);
+                        if (item.status != STATUS.PURCHASE.INCOME)
+                          TOTAL_VALUE += parseFloat(item.value);
+
+                        return (
+                          <tr key={Math.random()}>
+                            <td align="center">{truncateMax(item.name)}</td>
+                            <td
+                              align="center"
+                              bgcolor={
+                                item.status == STATUS.PURCHASE.INCOME
+                                  ? "#03C04A"
+                                  : item.weight == 0
+                                  ? "lightblue"
+                                  : item.weight == 100
+                                  ? "tomato"
+                                  : ""
+                              }
+                            >
+                              {item.status == STATUS.PURCHASE.WITH_SPLIT ||
+                              item.status == STATUS.PURCHASE.FROM_SPLIT
+                                ? `(${item.value}) ` + item.iShare
+                                : item.status == STATUS.PURCHASE.NO_SPLIT
+                                ? item.value
+                                : item.status == STATUS.PURCHASE.INCOME
+                                ? item.value
+                                : ""}
+                            </td>
+                            <td align="center">{item.dop || item.doi}</td>
+                            <td align="center">
+                              {item.status == STATUS.PURCHASE.NO_SPLIT ? (
+                                <div>
+                                  <div className={classes.rex}>
+                                    <button
+                                      id={item.id}
+                                      value={item.status}
+                                      onClick={handleEditClick}
+                                    >
+                                      Edit
+                                    </button>
+                                  </div>
+                                  <div className={classes.rex}>
+                                    <div className="input-group">
+                                      <span>
+                                        <button
+                                          id={item.id}
+                                          value={item.status}
+                                          className="btn btn-primary"
+                                          onClick={(mouseEvent) => {
+                                            togglePopup(
+                                              "HOUSE",
+                                              item,
+                                              mouseEvent
+                                            );
+                                          }}
+                                        >
+                                          Split
+                                        </button>
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+                              ) : item.status == STATUS.PURCHASE.WITH_SPLIT ||
+                                item.status == STATUS.PURCHASE.FROM_SPLIT ? (
+                                <>
+                                  <button
+                                    id={item.id}
+                                    value={item.status}
+                                    onClick={handleEditClick}
+                                  >
+                                    Edit
+                                  </button>
+                                  <input
+                                    id={"weight" + item.id}
+                                    type="text"
+                                    name="split_value"
+                                    className="form-control"
+                                    placeholder={item.weight + "%"}
+                                    size="1"
+                                    disabled
+                                  ></input>
+                                </>
+                              ) : (
+                                <>
+                                  <button
+                                    id={item.id}
+                                    value={item.status}
+                                    onClick={handleEditClick}
+                                  >
+                                    Edit
+                                  </button>
+                                </>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </TableBody>
+                    <TableBody>
+                      {
+                        <tr bgcolor="#E6E1EF">
+                          <td align="center">Total</td>
+                          <td align="center">{TOTAL_ISHARE.toFixed(2)}</td>
+                          <td align="center">
+                            {new Date().toISOString().split("T")[0]}
+                          </td>
+                          <td align="center"></td>
+                        </tr>
+                      }
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+                <TablePagination
+                  rowsPerPageOptions={[10, 25, 100]}
+                  component="div"
+                  count={rows.length}
+                  rowsPerPage={rowsPerPage}
+                  page={page}
+                  onPageChange={handleChangePage}
+                  onRowsPerPageChange={handleChangeRowsPerPage}
+                />
+              </Paper>
+            </CardBody>
+          </Card>
+        </GridItem>
+        <GridItem xs={4} sm={4} md={4}>
+          <Card>
+            <CardHeader color="primary">
+              <div>
+                <div className={classes.child}>
+                  <h4 className={classes.cardTitleWhite}>
+                    House Bills History
+                  </h4>
+                </div>
+                <div className={classes.child}>
+                  <Button
+                    color="warning"
+                    size="sm"
+                    onClick={() => handleTableStatus("HOUSE")}
+                  >
+                    HOUSE
+                  </Button>
+                  <Button
+                    color="warning"
+                    size="sm"
+                    onClick={() => handleTableStatus("UTILITY")}
+                  >
+                    UTILITY
+                  </Button>
+                  <div className={classes.childRight}>
+                    <Button
+                      color="rose"
+                      size="sm"
+                      justIcon={true}
+                      onClick={() => togglePopup("T")}
+                    >
+                      +
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </CardHeader>
+            <CardBody>
+              <Paper sx={{ width: "100%" }}>
+                <TableContainer sx={{ minHeight: 300 }}>
+                  <Table stickyHeader aria-label="sticky table">
+                    <TableHead>
+                      <TableRow>
+                        {columns_house.map((column) => (
                           <TableCell
                             key={column.id}
                             align="center"
@@ -590,7 +841,7 @@ export default function UserProfile() {
           </Card>
         </GridItem>
       </GridContainer>
-      {isOpen && <Popup content={purchaseForm} handleClose={togglePopup} />}
+      {isOpen && <Popup content={showPopup()} handleClose={togglePopup} />}
     </div>
   );
 }

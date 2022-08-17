@@ -2,8 +2,6 @@ let rows_aux = [];
 import STATUS from "Utility/status.js";
 
 export function truncateMax(data) {
-  console.log(data.length);
-  console.log(data.slice(0, STATUS.NAME_MAX_LENGTH - 1));
   if (data.length > STATUS.NAME_MAX_LENGTH)
     return data.slice(0, STATUS.NAME_MAX_LENGTH - 1);
   return data;

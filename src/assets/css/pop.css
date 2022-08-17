@@ -16,10 +16,10 @@
   height: 75%;
   max-height: 80%;
   margin-top: calc(100vh - 85vh - 20px);
-  background: transparent;
+  background: black;
   border-radius: 4px;
   padding-left: 15%;
-  border: 1px solid #999;
+  border: 1px solid transparent;
   z-index: 20 !important;
 }
 
